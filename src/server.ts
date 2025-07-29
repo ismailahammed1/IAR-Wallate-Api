@@ -1,19 +1,21 @@
+/* eslint-disable no-console */
 import { Server } from 'http';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import dotenv from 'dotenv'
 import app from './app';
+import { envVars } from './app/config/envVars';
 dotenv.config();
 
 let server:Server;
 ;
-const PORT = process.env.PORT || 3000;
-const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/IAR-Wallet-api';
+const PORT = envVars.PORT || 3000;
+const MONGO_URL = envVars.MONGO_URL || '';
+
+
 
 const startServer = async () => {
   try {
     await mongoose.connect(MONGO_URL);
-    console.log('Connected to MongoDB');
-
     server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

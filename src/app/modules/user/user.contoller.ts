@@ -1,22 +1,34 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Request, Response } from "express";
-import { StatusCodes } from "http-status-codes"; 
+import { StatusCodes } from "http-status-codes";
 import { UserServices } from "./user.services";
+import { catchAsync } from "../../middlewares/checkAuth";
+import { sendResponse } from "../../utils/sendResponse";
 
-const userRegister = async (req: Request, res: Response) => {
-  try {
-    const user=await UserServices.createUser(req.body)
+const userRegister = catchAsync(async (req: Request, res: Response) => {
+  const user = await UserServices.createUser(req.body);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.CREATED,
+    message: "User Created Successfully",
+    data: user,
+  });
+});
 
-    return res.status(StatusCodes.CREATED).json({
-      message: "User registered successfully",
-      data: user,
-    });
-  } catch (error: any) {
-    return res.status(StatusCodes.BAD_REQUEST).json({
-      message: `Something went wrong: ${error.message}`,
-      error,
-    });
-  }
-};
+const getAllUser = catchAsync(async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
 
-export default { userRegister };
+  const result = await UserServices.getAllUser(page, limit);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "All users retrieved successfully",
+    data: result.data,
+    meta: result.meta,
+  });
+});
+
+
+export default { userRegister, getAllUser };

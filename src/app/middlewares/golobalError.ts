@@ -1,11 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// src/middlewares/globalErrorHandler.ts
-
-import { NextFunction, Request, Response } from "express";
-import { envVars } from "../config/envVars";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errorHelpers/AppError";
-
+import { envVars } from "../config/envVars";
 
 const globalErrorHandler = (
   error: any,
@@ -13,13 +10,23 @@ const globalErrorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  const statusCode = error instanceof AppError ? error.statusCode : 500;
+  let statusCode = 500;
+  let message = "Internal Server Error";
+
+  // Check for AppError
+  if (error instanceof AppError) {
+    statusCode = error.statusCode;
+    message = error.message;
+  } else if (error instanceof Error) {
+    message = error.message;
+  }
+
 
   res.status(statusCode).json({
-    success: false,
-    message: error.message || "Internal Server Error",
-    details: error.details || null,
-    stack: envVars.NODE_ENV === "Development" ? error.stack : undefined,
+        success: false,
+        message,
+        err: envVars.NODE_ENV === "Development" ? error : null,
+        stack: envVars.NODE_ENV === "Development" ? error.stack : null
   });
 };
 

@@ -1,12 +1,15 @@
+// AppError.ts
 export class AppError extends Error {
   statusCode: number;
-  details?: unknown;
-
-  constructor(message: string, statusCode = 500, details?: unknown) {
+  
+  constructor(message: string, statusCode = 500, stack?: string) {
     super(message);
     this.statusCode = statusCode;
-    this.details = details;
-
-    Error.captureStackTrace(this, this.constructor);
+    
+    if (stack) {
+      this.stack = stack;
+    } else {
+      Error.captureStackTrace(this, this.constructor);
+    }
   }
 }

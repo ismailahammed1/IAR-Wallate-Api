@@ -1,7 +1,7 @@
-// user.interface.ts
 import { Types } from "mongoose";
 
 export enum Role {
+  SUPER_ADMIN="SUPER_ADMIN",
   ADMIN = "ADMIN",
   USER = "USER",
   AGENT = "AGENT",
@@ -19,7 +19,7 @@ export enum AuthProviderType {
 }
 
 export interface IAuthProvider {
-  provider: AuthProviderType;
+  provider: AuthProviderType; //goole ,credintial
   providerID: string;
 }
 
@@ -37,8 +37,8 @@ export interface Iuser {
 
   auths: IAuthProvider[];
   role: Role;
-  approved?: boolean; //  agents
-  commissionRate?: number; //  agents
+  approved?: boolean; // For agents
+  commissionRate?: number; // For agents
   createdAt?: Date;
   updatedAt?: Date;
 }

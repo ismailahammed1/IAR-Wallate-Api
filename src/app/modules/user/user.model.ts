@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { IAuthProvider, isActive, Iuser, Role } from "./user.interface";
+import { IAuthProvider, isActive, Iuser,  Role } from "./user.interface";
 
 const authProviderSchema = new Schema<IAuthProvider>(
   {

@@ -1,12 +1,14 @@
-import express, { Application } from "express";
+import express from "express";
 import cors from "cors";
 import { router } from "./router"; 
 import notFound from "./app/middlewares/notFound";
 import globalErrorHandler from "./app/middlewares/golobalError";
 
-const app: Application = express();
+const app = express();
 
 app.use(cors());
+
+
 app.use(express.json());
 
 // API routes

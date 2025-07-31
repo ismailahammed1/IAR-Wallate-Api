@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { UserServices } from "./user.services";
-import { catchAsync } from "../../middlewares/checkAuth";
 import { sendResponse } from "../../utils/sendResponse";
+import { catchAsync } from "../../utils/catchAsync";
+import { JwtPayload } from "jsonwebtoken";
 
-const userRegister = catchAsync(async (req: Request, res: Response) => {
+const userRegister = catchAsync(async (req: Request, res: Response, next:NextFunction) => {
   const user = await UserServices.createUser(req.body);
   sendResponse(res, {
     success: true,
@@ -15,7 +17,7 @@ const userRegister = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getAllUser = catchAsync(async (req: Request, res: Response) => {
+const getAllUser = catchAsync(async (req: Request, res: Response, next:NextFunction) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
 
@@ -29,6 +31,26 @@ const getAllUser = catchAsync(async (req: Request, res: Response) => {
     meta: result.meta,
   });
 });
+const newUpdatedUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const userId = req.params.id;
+  const verifiedToken = req.user;
+  const payload = req.body;
+
+  const user = await UserServices.userUpdated(userId, payload, verifiedToken as JwtPayload); // ✅ Add await
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "User updated successfully",
+    data: user,
+  });
+});
 
 
-export default { userRegister, getAllUser };
+
+export default {
+  userRegister,
+  getAllUser,
+  newUpdatedUser,
+};
+

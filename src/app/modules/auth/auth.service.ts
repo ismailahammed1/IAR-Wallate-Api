@@ -1,37 +1,38 @@
-import { StatusCodes } from "http-status-codes";
+
 import { AppError } from "../../errorHelpers/AppError";
-import { createNewAccessTokenWithRefreshToken, createUserTokens } from "../../utils/userToken";
-import { Iuser } from "../user/user.interface";
+import { createNewAccessTokenWithRefreshToken } from "../../utils/userToken";
+
 import { User } from "../user/user.model";
 import bcryptjs from 'bcryptjs'
+import { JwtPayload } from "jsonwebtoken";
+import { envVars } from "../../config/envVars";
 
-const credintialsLogin = async (payload: Partial<Iuser>) => {
-  const { email, password } = payload;
-  const isUserExist = await User.findOne({ email });
-  if (!isUserExist) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "user Already Exist");
-  }
-  const isPasswordMatched = await bcryptjs.compare(
-    password as string,
-    isUserExist.password as string
-  );
 
-  if (!isPasswordMatched) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "password incorect");
-  }
-  const userToken = createUserTokens(isUserExist);
-
-  const userObj = isUserExist.toObject();
-  delete userObj.password;
-  return {
-    accessToken: userToken.accessToken,
-    refreshToken: userToken.refreshToken,
-    users: userObj,
-  };
+const getNewAccessToken = async (refreshToken: string) => {
+  const accessToken = await createNewAccessTokenWithRefreshToken(refreshToken);
+  return { accessToken };
 };
 
+const resetPassword = async (payload: { newPassword: string; id: string }, decodedToken: JwtPayload) => {
+  if (payload.id !== decodedToken.userId) {
+    throw new AppError(403, "You are not authorized to reset this password");
+  }
 
-export const authServices={
+  const user = await User.findById(decodedToken.userId);
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
 
-    credintialsLogin
-}
+  const hashedPassword = await bcryptjs.hash(
+    payload.newPassword,
+    Number(envVars.BCRYPT_SALT_ROUND)
+  );
+
+  user.password = hashedPassword;
+  await user.save();
+};
+
+export const authServices = {
+  getNewAccessToken,
+  resetPassword,
+};

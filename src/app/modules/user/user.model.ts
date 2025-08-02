@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { IAuthProvider, isActive, Iuser,  Role } from "./user.interface";
+import { IAuthProvider, isActive, Iuser, Role } from "./user.interface";
 
 const authProviderSchema = new Schema<IAuthProvider>(
   {
@@ -14,7 +14,7 @@ const authProviderSchema = new Schema<IAuthProvider>(
 
 const userSchema = new Schema<Iuser>(
   {
-    name: { type: String,  },
+    name: { type: String },
     email: { type: String, required: true, unique: true },
     password: { type: String },
     role: {
@@ -32,9 +32,14 @@ const userSchema = new Schema<Iuser>(
       default: isActive.ACTIVE,
     },
     isVerified: { type: Boolean, default: false },
+    wallet: {
+      type: Schema.Types.ObjectId,
+      ref: "Wallet",
+      required: true,
+    },
     auths: [authProviderSchema],
-    approved: { type: Boolean, default: false }, 
-    commissionRate: { type: Number, default: 0 }, 
+    approved: { type: Boolean, default: false },
+    commissionRate: { type: Number, default: 0 },
   },
   {
     timestamps: true,

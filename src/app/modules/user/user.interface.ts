@@ -1,7 +1,7 @@
-import { Types } from "mongoose";
+import { ObjectId, Types } from "mongoose";
 
 export enum Role {
-  SUPER_ADMIN="SUPER_ADMIN",
+  SUPER_ADMIN = "SUPER_ADMIN",
   ADMIN = "ADMIN",
   USER = "USER",
   AGENT = "AGENT",
@@ -34,7 +34,7 @@ export interface Iuser {
   isDeleted?: boolean;
   isActive?: isActive;
   isVerified?: boolean;
-
+  wallet: ObjectId;
   auths: IAuthProvider[];
   role: Role;
   approved?: boolean; // For agents

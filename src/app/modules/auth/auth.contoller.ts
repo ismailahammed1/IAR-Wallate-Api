@@ -117,6 +117,21 @@ const resetPassword = catchAsync(
   }
 );
 
+const setPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const newPassword = req.body.newPassword;
+  const decodedToken = req.user;
+
+  await authServices.setPassword(newPassword, decodedToken as JwtPayload);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Password set successfully",
+    data: null,
+  });
+});
+
+
 const googleCallbackController = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     let redirectTo = (req.query.state as string) || "";
@@ -131,7 +146,7 @@ const googleCallbackController = catchAsync(
     const userTokens = createUserTokens(user);
     setAuthCookie(res, userTokens);
 
-    const redirectUrl = `${envVars.FRONT_END_URL}/send-money${redirectTo.replace(/^\//, "")}`;
+    const redirectUrl = `${envVars.FRONT_END_URL}/home${redirectTo.replace(/^\//, "")}`;
     res.redirect(redirectUrl);
   }
 );
@@ -143,4 +158,5 @@ export const AuthController = {
   resetPassword,
   googleCallbackController, 
   changePassword,
+  setPassword,
 };

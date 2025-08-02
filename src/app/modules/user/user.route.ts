@@ -12,7 +12,7 @@ router.post(
   validateRequest(createUserZodSchema),
   userContoller.userRegister
 );
-router.get("/all-users", checkAuth(Role.USER,Role.SUPER_ADMIN), userContoller.getAllUser);
+router.get("/all-users", checkAuth(Role.ADMIN,Role.SUPER_ADMIN), userContoller.getAllUser);
 router.patch(
   "/:id",
   checkAuth(...Object.values(Role)),

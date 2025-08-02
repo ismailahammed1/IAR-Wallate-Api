@@ -88,6 +88,21 @@ const logout = catchAsync(
   }
 );
 
+const changePassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+
+    const newPassword = req.body.newPassword;
+    const oldPassword = req.body.oldPassword;
+    const decodedToken = req.user
+
+    await authServices.changePassword(oldPassword, newPassword, decodedToken as JwtPayload);
+
+    sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: "Password Changed Successfully",
+        data: null,
+    })
+})
 const resetPassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
@@ -104,11 +119,11 @@ const resetPassword = catchAsync(
 
 const googleCallbackController = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const redirectTo = (req.query.state as string) || "";
-
+    let redirectTo = (req.query.state as string) || "";
+    if (redirectTo.startsWith("/")) {
+        redirectTo = redirectTo.slice(1) }
     const user = req.user;
-    console.log(user);
-    
+ 
     if (!user) {
       return next(new AppError(StatusCodes.NOT_FOUND, "User not found"));
     }
@@ -116,7 +131,7 @@ const googleCallbackController = catchAsync(
     const userTokens = createUserTokens(user);
     setAuthCookie(res, userTokens);
 
-    const redirectUrl = `${envVars.FRONT_END_URL}/${redirectTo.replace(/^\//, "")}`;
+    const redirectUrl = `${envVars.FRONT_END_URL}/send-money${redirectTo.replace(/^\//, "")}`;
     res.redirect(redirectUrl);
   }
 );
@@ -127,4 +142,5 @@ export const AuthController = {
   logout,
   resetPassword,
   googleCallbackController, 
+  changePassword,
 };

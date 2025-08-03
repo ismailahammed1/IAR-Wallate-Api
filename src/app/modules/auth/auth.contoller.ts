@@ -11,6 +11,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
 import { createUserTokens } from "../../utils/userToken";
 import passport from "passport";
+import { Iuser } from "../user/user.interface";
 
 const credentialsLogin = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 
@@ -143,7 +144,7 @@ const googleCallbackController = catchAsync(
       return next(new AppError(StatusCodes.NOT_FOUND, "User not found"));
     }
 
-    const userTokens = createUserTokens(user);
+    const userTokens = createUserTokens(user as Partial<Iuser>);
     setAuthCookie(res, userTokens);
 
     const redirectUrl = `${envVars.FRONT_END_URL}/home${redirectTo.replace(/^\//, "")}`;

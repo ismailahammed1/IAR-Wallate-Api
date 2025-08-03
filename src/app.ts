@@ -7,6 +7,7 @@ import globalErrorHandler from "./app/middlewares/golobalError";
 import passport from "passport";
 import expressSession from 'express-session'
 import './app/config/Passport';
+import { envVars } from "./app/config/envVars";
 
 const app = express();
 
@@ -15,7 +16,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(expressSession(
   {
-      secret: 'keyboard cat',
+      secret: envVars.EXPRESS_SESSION_SECRET,
   resave: false,
   saveUninitialized: false
   }

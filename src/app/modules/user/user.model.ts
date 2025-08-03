@@ -35,7 +35,7 @@ const userSchema = new Schema<Iuser>(
     wallet: {
       type: Schema.Types.ObjectId,
       ref: "Wallet",
-      required: true,
+      required: false,
     },
     auths: [authProviderSchema],
     approved: { type: Boolean, default: false },
@@ -46,5 +46,8 @@ const userSchema = new Schema<Iuser>(
     versionKey: false,
   }
 );
+userSchema.virtual('id').get(function() {
+  return this._id.toString();
+})
 
 export const User = model<Iuser>("User", userSchema);

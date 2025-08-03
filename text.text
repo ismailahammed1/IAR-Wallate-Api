@@ -1,0 +1,26 @@
+POST /user/register, 
+POST /user/login, 
+POST /agent/register, 
+POST /agent/login, 
+POST /admin/loginF
+
+User Features
+
+POST /user/wallet/add-money — Add money
+POST /user/wallet/withdraw — Withdraw money (add this endpoint)
+POST /user/wallet/transfer — Send money to another user
+GET /user/wallet — View balance
+GET /transaction/user — View transaction history
+Agent Features
+
+POST /agent/wallet/add-money — Cash-in
+POST /agent/wallet/cash-out — Cash-out (add this endpoint)
+GET /agent/wallet — View agent wallet
+(Optional) GET /agent/commission — View commission (add if needed)
+Admin Features
+
+GET /admin/users — View users
+PATCH /admin/wallet/block/:id — Block/unblock wallets
+GET /admin/agents — View agents
+PATCH /admin/agent/approve/:id — Approve/suspend agents (add this endpoint)
+GET /admin/transactions — View all transactions

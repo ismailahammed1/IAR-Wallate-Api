@@ -1,65 +1,47 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { AppError } from "../errorHelpers/AppError";
-import { User } from "../modules/user/user.model";
-import { envVars } from "../config/envVars";
-import { JwtPayload } from "jsonwebtoken";
-import { verifyToken } from "../utils/jwt";
 import { StatusCodes } from "http-status-codes";
-import { isActive } from "../modules/user/user.interface";
+import { envVars } from "../config/envVars";
 
-export const checkAuth =
-  (...authRoles: string[]) =>
-  async (req: Request, res: Response, next: NextFunction) => {
+
+export const checkAuth = (...allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     try {
-const rawAuthHeader =
-  req.headers.authorization || req.cookies.accessToken;
-
-if (
-  !rawAuthHeader ||
-  typeof rawAuthHeader !== "string" ||
-  (!rawAuthHeader.startsWith("Bearer ") && !req.cookies.accessToken)
-) {
-  throw new AppError(StatusCodes.FORBIDDEN, "No Token Received");
-}
-
-const token = rawAuthHeader.startsWith("Bearer ")
-  ? rawAuthHeader.split(" ")[1]
-  : rawAuthHeader; 
-
-
-      const verifiedToken = verifyToken(
-        token,
-        envVars.jwt_secret
-      ) as JwtPayload;
-
-      const isUserExist = await User.findOne({ email: verifiedToken.email });
-
-      if (!isUserExist) {
-        throw new AppError(StatusCodes.BAD_REQUEST, "User does not exist");
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, "No token provided");
       }
-      if (
-        isUserExist.isActive === isActive.BLOCKED ||
-        isUserExist.isActive === isActive.INACTIVE
-      ) {
-        throw new AppError(
-          StatusCodes.BAD_REQUEST,
-          `User is ${isUserExist.isActive}`
-        );
+      let token: string;
+      if (authHeader.startsWith("Bearer ")) {
+        token = authHeader.split(" ")[1];
+      } else {
+        token = authHeader;
       }
-      if (isUserExist.isDeleted) {
-        throw new AppError(StatusCodes.BAD_REQUEST, "User is deleted");
+      if (!token) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, "No token provided");
+      }
+      const decoded = jwt.verify(token, envVars.jwt_secret) as JwtPayload & {
+        userId: string;
+        role: string;
+      };
+
+      if (!decoded.userId) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, "Unauthorized: No user ID in token");
       }
 
-      if (!authRoles.includes(verifiedToken.role)) {
-        throw new AppError(
-          StatusCodes.FORBIDDEN,
-          "You are not permitted to view this route!!!"
-        );
+      req.user = {
+        userId: decoded.userId,
+        role: decoded.role,
+      } as { userId: string; role: string };
+
+      if (!allowedRoles.includes(decoded.role)) {
+        throw new AppError(StatusCodes.FORBIDDEN, "Forbidden: You don't have permission");
       }
-      req.user = verifiedToken;
+
       next();
-    } catch (error) {
-      // console.log("jwt error", error);
-      next(error);
+    } catch (err) {
+      next(err);
     }
   };
+};

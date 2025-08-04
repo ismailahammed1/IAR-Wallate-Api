@@ -18,5 +18,6 @@ router.patch(
   checkAuth(...Object.values(Role)),
   userContoller.newUpdatedUser
 );
-
+router.get("/me", checkAuth(...Object.values(Role)), userContoller.getMe)
+router.get("/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), userContoller.getSingleUser)
 export const UserRoutes = router;

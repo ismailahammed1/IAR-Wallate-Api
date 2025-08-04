@@ -32,8 +32,8 @@ const createUser = async (payload: Partial<Iuser>) => {
     name,
     email,
     password:hashedPassword,
-   ...rest,
     auths: [authProvider],
+   ...rest,
   });
 
   return user;
@@ -56,6 +56,21 @@ const getAllUser = async (page = 1, limit = 1) => {
     },
   };
 };
+
+const getSingleUser = async (id: string) => {
+    const user = await User.findById(id).select("-password");
+    return {
+        data: user
+    }
+};
+const getMe = async (userId: string) => {
+    const user = await User.findById(userId).select("-password");
+    return {
+        data: user
+    }
+};
+
+
 
 const userUpdated=async(userId: string, payload: Partial<Iuser>, decodedToken: JwtPayload)=>{
          
@@ -97,4 +112,6 @@ export const UserServices = {
   createUser,
   getAllUser,
   userUpdated,
+getMe,
+getSingleUser
 };

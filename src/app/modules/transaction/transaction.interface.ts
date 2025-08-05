@@ -1,11 +1,12 @@
 import { Types } from "mongoose";
+
 export enum TransactionType {
-  ADD_MONEY = "add_money",
-  WITHDRAW = "withdraw",
-  SEND_MONEY = "send_money",
-  CASH_IN = "cash_in",
-  CASH_OUT = "cash_out",
+  ADD = "ADD",
+  SEND = "SEND",
+  RECEIVE = "RECEIVE",
+  WITHDRAW = "WITHDRAW",
 }
+
 
 export enum TransactionStatus {
   PENDING = "pending",
@@ -15,13 +16,14 @@ export enum TransactionStatus {
 
 export interface ITransaction {
   _id?: Types.ObjectId;
+  transactionId?: string;
   type: TransactionType;
-  from?: Types.ObjectId | null; // ref: 'User'
-  to?: Types.ObjectId | null;   // ref: 'User'
+  from?: Types.ObjectId | null;
+  to?: Types.ObjectId | null;
   amount: number;
   fee?: number;
   commission?: number;
-  initiatedBy: Types.ObjectId;  // ref: 'User'
+  initiatedBy: Types.ObjectId;
   status: TransactionStatus;
   createdAt?: Date;
   updatedAt?: Date;

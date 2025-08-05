@@ -1,13 +1,11 @@
 
 import { NextFunction, Request, Response } from "express";
-import { WalletModel } from "./wallet.model";
-import { AccountStatus } from "./wallet.interface";
 import { catchAsync } from "../../utils/catchAsync";
 import { walletService } from "./wallet.sevice";
 import { sendResponse } from "../../utils/sendResponse";
 import { StatusCodes } from "http-status-codes";
 import { AppError } from "../../errorHelpers/AppError";
-import { isValidObjectId } from "mongoose";
+
 
 const getMyWallet = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 
@@ -40,62 +38,53 @@ const getMyWallet = catchAsync(async (req: Request, res: Response, next: NextFun
 
 
 
-const blockOrUnblockWallet = async (req: Request, res: Response) => {
+const blockWallet = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+try {
+      const { walletId } = req.params; 
+      if (!walletId) {
+        throw new AppError(StatusCodes.BAD_REQUEST, "Wallet ID is required");
+      }
+    const wallet = await walletService.blockWallet(walletId);
 
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!status) {
-      return res.status(400).json({
-        success: false,
-        message: "Status is required.",
-      });
+    if (!wallet) {
+      throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
     }
-
-    if (!Object.values(AccountStatus).includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status value. Must be one of: ACTIVE, INACTIVE, BLOCKED.",
-      });
-    }
-
-    if (!isValidObjectId(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid wallet ID format.",
-      });
-    }
-
-    const updatedWallet = await WalletModel.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
-
-    if (!updatedWallet) {
-      return res.status(404).json({
-        success: false,
-        message: "Wallet not found.",
-      });
-    }
-
-    res.json({
+    sendResponse(res, {
       success: true,
-      message: `Wallet ${status.toLowerCase()} successfully.`,
-      data: updatedWallet,
+      statusCode: StatusCodes.OK,
+      message: 'Wallet blocked successfully',
+      data: wallet,
     });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Server error.",
-      error: typeof error === 'object' && error !== null && 'message' in error ? (error as { message: string }).message : String(error),
-    });
-  }
-};
+} catch (error) {
+    next(error);
+  } 
 
+
+});
+
+const unblockWallet = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+ try {
+  const { walletId } = req.params;
+  if (!walletId) {  
+    throw new AppError(StatusCodes.BAD_REQUEST, "Wallet ID is required");
+  }
+  const wallet = await walletService.unblockWallet(walletId);
+  if (!wallet) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
+  }     
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Wallet unblocked successfully',
+    data: wallet,
+  });
+ } catch (error) {
+    next(error);
+ }
+});
 
 export const walletContoller={
-    blockOrUnblockWallet,
-    getMyWallet
+    getMyWallet,
+    blockWallet,
+    unblockWallet,
 }

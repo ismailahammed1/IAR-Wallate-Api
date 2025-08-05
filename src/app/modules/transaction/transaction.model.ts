@@ -1,10 +1,13 @@
-import { Schema, model } from "mongoose";
+import { model, Schema } from "mongoose";
 import { ITransaction, TransactionStatus, TransactionType } from "./transaction.interface";
-
-
 
 const TransactionSchema = new Schema<ITransaction>(
   {
+    transactionId: {
+      type: String,
+      unique: true,
+      default: () => `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    },
     type: {
       type: String,
       enum: Object.values(TransactionType),
@@ -25,4 +28,5 @@ const TransactionSchema = new Schema<ITransaction>(
   { timestamps: true }
 );
 
-export const TransactionModel = model<ITransaction>("Transaction", TransactionSchema);
+
+export const TransactionModel= model<ITransaction>("Transaction", TransactionSchema);

@@ -4,7 +4,6 @@ import { StatusCodes } from "http-status-codes";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { AgentService } from "./agent.service";
-import { Agent } from "./agent.model";
 import { JwtPayload } from "jsonwebtoken";
 
 const approveAgent = catchAsync(async (req: Request, res: Response , next:NextFunction) => {

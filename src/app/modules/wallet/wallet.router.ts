@@ -6,6 +6,7 @@ import { walletContoller } from "./wallet.contoller";
 const router = express.Router();
 
 router.get("/me", checkAuth(...Object.values(Role)),  walletContoller.getMyWallet);
-router.patch("/block/:id",  checkAuth(Role.ADMIN, Role.SUPER_ADMIN), walletContoller.blockOrUnblockWallet);
+router.patch("/block/:id",  checkAuth(Role.ADMIN, Role.SUPER_ADMIN), walletContoller.blockWallet);
+router.patch("/unblock/:id",  checkAuth(Role.ADMIN, Role.SUPER_ADMIN), walletContoller.unblockWallet);
 
 export const walletRouter=router;

@@ -27,11 +27,12 @@ export enum userStatus {
   APPROVED = "APPROVED",
   SUSPENDED = "SUSPENDED",
   REJECTED = "REJECTED",
-  PENDING_AGENT_APPROVAL = "PENDING_AGENT_APPROVAL",
+
 }
 
 export interface Iuser {
-  _id?: Types.ObjectId;
+     _id?: Types.ObjectId | string;
+  userId?: Types.ObjectId | string; // Optional for backward compatibility
   name: string;
   email: string;
   password?: string;
@@ -40,16 +41,16 @@ export interface Iuser {
   address?: string;
   isDeleted?: boolean;
   isActive?: isActive;
+  role: Role;
+  userStatus?: userStatus;
   isVerified?: boolean;
   wallet?: Types.ObjectId;
   auths: IAuthProvider[];
-  userStatus?: userStatus;
   nationalId?: string;
   profileImage?: string;
   dateOfBirth?: Date;
-  role: Role;
-  approved?: boolean; // For agents
-  commissionRate?: number; // For agents
+  approved?: boolean;
+  commissionRate?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

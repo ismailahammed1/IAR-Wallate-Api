@@ -12,6 +12,8 @@ export interface IAgent {
   role: string; // e.g., "AGENT"
   status: userStatus;
   isActive: isActive;
+  isDeleted?: boolean;
+  createdBy: string; // User ID of the creator
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -5,8 +5,7 @@ import { NextFunction, Request, Response } from "express";
 import { catchAsync } from "../../utils/catchAsync";
 import { JwtPayload } from "jsonwebtoken";
 import { transactionSevice } from "./transaction.service";
-
-
+import { AppError } from "../../errorHelpers/AppError";
 
 const userAddMoney = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as JwtPayload;
@@ -22,13 +21,12 @@ const userAddMoney = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
-
 const userTopUp = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user as JwtPayload;
+  const decodedToken = req.user as JwtPayload;
+  const user = decodedToken.userId;
   const { amount } = req.body;
 
-  const result = await transactionSevice.userTopUp(user.id, amount);
+  const result = await transactionSevice.userTopUp(user, amount);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -38,8 +36,53 @@ const userTopUp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const userWithdrawToAgent = catchAsync(async (req: Request, res: Response) => {
+  const decodedToken = req.user as JwtPayload;
+  const userId = decodedToken.userId;
+  const { agentId, amount } = req.body;
 
-export const transactionContoller={
+  if (!userId) {
+    throw new AppError(401, "User not authenticated");
+  }
+
+  const result = await transactionSevice.userWithdrawToAgent(
+    userId,
+    agentId,
+    amount
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Withdraw successful",
+    data: result,
+  });
+});
+
+const sendMoney = catchAsync(async (req: Request, res: Response) => {
+  const decodedToken = req.user as JwtPayload;
+  const userId = decodedToken.userId;
+  const { receiverId, amount } = req.body;
+  console.log(receiverId,amount, userId);
+  const result = await transactionSevice.sendMoneyByUser(
+    userId,
+    receiverId,
+    amount
+  );
+
+  
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
+export const transactionContoller = {
   userAddMoney,
   userTopUp,
-}
+  userWithdrawToAgent,
+  sendMoney,
+};

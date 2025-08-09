@@ -1,37 +1,55 @@
+/* eslint-disable no-useless-catch */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { AgentService } from "./agent.service";
 import { JwtPayload } from "jsonwebtoken";
+import { AppError } from "../../errorHelpers/AppError";
+import { WalletModel } from "../wallet/wallet.model";
+import { AccountStatus } from "../wallet/wallet.interface";
 
-const approveAgent = catchAsync(async (req: Request, res: Response , next:NextFunction) => {
-  if (!req.user) {
-    return next(new Error("User not authenticated"));
-  }
-  const agent = await AgentService.approveAgentRequest(req.params.id, req.user as JwtPayload);
 
-  sendResponse(res, {
-    success: true,
-    statusCode: StatusCodes.OK,
-    message: "Agent approved successfully",
-    data: agent,
-  });
+const agentRegister = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+ try {
+    
+     const agentWithoutWallet = await AgentService.agentCreate({
+      ...req.body,
+      wallet: undefined,
+    });
+
+    const wallet = await WalletModel.create({
+      user: agentWithoutWallet._id,
+      balance: 50,
+      status: AccountStatus.ACTIVE,
+    });
+
+
+    agentWithoutWallet.wallet = wallet._id as any;
+
+    await agentWithoutWallet.save();
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.CREATED,
+      message: "agent and Wallet created successfully",
+      data: agentWithoutWallet,
+    });
+  
+ } catch (error) {
+  throw (error)
+ }
+  
 });
 
-const suspendAgent = catchAsync(async (req: Request, res: Response) => {
-  const agent = await AgentService.suspendAgentRequest(req.params.id);
 
-  sendResponse(res, {
-    success: true,
-    statusCode: StatusCodes.OK,
-    message: "Agent suspended successfully",
-    data: agent,
-  });
-});
+
+
 
 export const agentContoller = {
-  approveAgent,
-  suspendAgent,
+  agentRegister,
 };

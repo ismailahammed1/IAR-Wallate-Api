@@ -1,0 +1,54 @@
+{
+  "userPart": {
+    "createUser": {
+      "link": "http://localhost:5000/api/v1/user/register",
+      "body": {
+        "name": "Ismail",
+        "email": "Ismail@gmail.com",
+        "password": "Ismail@123456",
+        "role": "USER"
+      }
+    }
+  },
+
+  "agentPart": {
+    "createAgent": {
+      "link": "http://localhost:5000/api/v1/agent/agent-register",
+      "body": {
+        "name": "Ismail",
+        "email": "Ismail@gmail.com",
+        "password": "Ismail@123456",
+        "role": "USER"
+      }
+    }
+  },
+
+  "auth": {
+      "approve": {
+    "note": "only admin approved user and admin, Without approval, users or agents cannot log in. Required: isVerified = true, approved = true, userStatus = true",
+      "link": "http://localhost:5000/api/v1/auth/approve/:id",
+      "params id": {
+         
+      }
+    },
+    "suspend agent":"",
+     "suspend": {
+    "note": "admin can suspend agent",
+
+      "link": "http://localhost:5000/api/v1/auth/approve/:id",
+      "params id": {
+         
+      }
+  },
+"transaction":{
+    "send money": {
+    "note": "",
+    "approve": {
+      "link": "",
+      "params id": {
+         
+      }
+    }
+  }
+}
+}

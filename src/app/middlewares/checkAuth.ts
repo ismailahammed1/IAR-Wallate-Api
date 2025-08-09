@@ -1,47 +1,47 @@
-import { Request, Response, NextFunction } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import { NextFunction, Request, Response } from "express";
+import httpStatus from "http-status-codes";
+import { JwtPayload } from "jsonwebtoken";
+import { User } from "../modules/user/user.model";
+import { verifyToken } from "../utils/jwt";
 import { AppError } from "../errorHelpers/AppError";
-import { StatusCodes } from "http-status-codes";
 import { envVars } from "../config/envVars";
+import { isActive } from "../modules/user/user.interface";
 
+export const checkAuth = (...authRoles: string[]) => async (req: Request, res: Response, next: NextFunction) => {
 
-export const checkAuth = (...allowedRoles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader) {
-        throw new AppError(StatusCodes.UNAUTHORIZED, "No token provided");
-      }
-      let token: string;
-      if (authHeader.startsWith("Bearer ")) {
-        token = authHeader.split(" ")[1];
-      } else {
-        token = authHeader;
-      }
-      if (!token) {
-        throw new AppError(StatusCodes.UNAUTHORIZED, "No token provided");
-      }
-      const decoded = jwt.verify(token, envVars.jwt_secret) as JwtPayload & {
-        userId: string;
-        role: string;
-      };
+        const accessToken = req.headers.authorization;
 
-      if (!decoded.userId) {
-        throw new AppError(StatusCodes.UNAUTHORIZED, "Unauthorized: No user ID in token");
-      }
+        if (!accessToken) {
+            throw new AppError(403, "No Token Recieved")
+        }
 
-      req.user = {
-        userId: decoded.userId,
-        role: decoded.role,
-      } as { userId: string; role: string };
 
-      if (!allowedRoles.includes(decoded.role)) {
-        throw new AppError(StatusCodes.FORBIDDEN, "Forbidden: You don't have permission");
-      }
+        const verifiedToken = verifyToken(accessToken, envVars.jwt_secret) as JwtPayload
 
-      next();
-    } catch (err) {
-      next(err);
+        const isUserExist = await User.findOne({ email: verifiedToken.email })
+
+        if (!isUserExist) {
+            throw new AppError(httpStatus.BAD_REQUEST, "User does not exist")
+        }
+        if (!isUserExist.isVerified) {
+            throw new AppError(httpStatus.BAD_REQUEST, "User is not verified")
+        }
+        if (isUserExist.isActive === isActive.BLOCKED || isUserExist.isActive === isActive.INACTIVE) {
+            throw new AppError(httpStatus.BAD_REQUEST, `User is ${isUserExist.isActive}`)
+        }
+        if (isUserExist.isDeleted) {
+            throw new AppError(httpStatus.BAD_REQUEST, "User is deleted")
+        }
+
+        if (!authRoles.includes(verifiedToken.role)) {
+            throw new AppError(403, "You are not permitted to view this route!!!")
+        }
+        req.user = verifiedToken
+        next()
+
+    } catch (error) {
+        console.log("jwt error", error);
+        next(error)
     }
-  };
-};
+}

@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-catch */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
@@ -11,9 +12,11 @@ import { WalletModel } from "../wallet/wallet.model";
 import { AccountStatus } from "../wallet/wallet.interface";
 import { AppError } from "../../errorHelpers/AppError";
 
+
 const userRegister = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const userWithoutWallet = await UserServices.createUser({
+   try {
+     const userWithoutWallet = await UserServices.createUser({
       ...req.body,
       wallet: undefined,
     });
@@ -35,8 +38,11 @@ const userRegister = catchAsync(
       message: "User and Wallet created successfully",
       data: userWithoutWallet,
     });
-  }
-);
+  
+   } catch (error) {
+    throw (error)
+   }
+});
 
 
 
@@ -99,11 +105,13 @@ const newUpdatedUser = catchAsync(
   }
 );
 
+
 export default {
   userRegister,
   getAllUser,
   newUpdatedUser,
   getMe,
   getSingleUser,
+
 
 };

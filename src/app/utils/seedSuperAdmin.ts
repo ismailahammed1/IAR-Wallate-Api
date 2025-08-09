@@ -1,8 +1,9 @@
 import bcryptjs from "bcryptjs";
 
-import { AuthProviderType, IAuthProvider, Iuser, Role } from "../modules/user/user.interface";
+import { AuthProviderType, IAuthProvider, isActive, Iuser, Role, userStatus } from "../modules/user/user.interface";
 import { User } from "../modules/user/user.model";
 import { envVars } from "../config/envVars";
+
 
 export const seedSuperAdmin = async () => {
     try {
@@ -29,6 +30,8 @@ const hashedPassword = await bcryptjs.hash(envVars.SUPER_ADMIN_PASSWROD, Number(
             email: envVars.SUPER_ADMIN_EMAIL,
             password: hashedPassword,
             isVerified: true,
+            userStatus: userStatus.APPROVED,
+            isActive: isActive.ACTIVE, // Default to ACTIVE
             auths: [authProvider]
 
         }

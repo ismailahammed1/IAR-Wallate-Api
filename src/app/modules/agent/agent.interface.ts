@@ -1,21 +1,24 @@
-import { isActive, userStatus } from "../user/user.interface";
-
+import { Types } from "mongoose";
+import { isActive, Role, userStatus } from "../user/user.interface";
 
 
 export interface IAgent {
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
+  password: string;
   address?: string;
   nationalId?: string;
   profileImage?: string;
-  role: string; // e.g., "AGENT"
-  status: userStatus;
   isActive: isActive;
   isDeleted?: boolean;
-  createdBy: string; // User ID of the creator
+  role: Role;
+   wallet?: Types.ObjectId;
+  userStatus?: userStatus;
+  isVerified?: boolean;
+  approved?: boolean;
+  createdBy: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
-
 

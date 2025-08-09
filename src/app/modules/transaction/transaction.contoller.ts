@@ -8,10 +8,11 @@ import { transactionSevice } from "./transaction.service";
 import { AppError } from "../../errorHelpers/AppError";
 
 const userAddMoney = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user as JwtPayload;
+  const loginUser = req.user as JwtPayload;
+  const userId=loginUser.userId
   const { amount } = req.body;
 
-  const result = await transactionSevice.addMoneyByUser(user.userId, amount);
+  const result = await transactionSevice.addMoneyByUser(userId, amount);
 
   res.status(200).json({
     success: true,
@@ -80,9 +81,43 @@ const sendMoney = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+// agent transactionContoller
+
+export const agentCashIn = catchAsync(async (req: Request, res: Response) => {
+  const agentId = (req.user as JwtPayload).userId;
+  const { userId, amount } = req.body;
+
+  const result = await transactionSevice.agentCashInToUser(agentId, userId, amount);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
+export const agentCashOut = catchAsync(async (req: Request, res: Response) => {
+  const agentId = (req.user as JwtPayload).userId;
+  const { userId, amount } = req.body;
+
+  const result = await transactionSevice.agentCashOutFromUser(agentId, userId, amount);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
+
 export const transactionContoller = {
   userAddMoney,
   userTopUp,
   userWithdrawToAgent,
   sendMoney,
+  agentCashIn,
+  agentCashOut,
 };

@@ -6,6 +6,7 @@ import { AccountStatus } from "../wallet/wallet.interface";
 import { TransactionStatus, TransactionType } from "./transaction.interface";
 import { User } from "../user/user.model";
 import { Role } from "../user/user.interface";
+import { Agent } from "../agent/agent.model";
 
 
 const addMoneyByUser = async (userId: string, amount: number) => {
@@ -99,7 +100,7 @@ const userWithdrawToAgent = async (
       throw new AppError(403, "Invalid user or not authorized");
     }
 
-    const agent = await User.findById(agentId);
+    const agent = await Agent.findById(agentId);
     if (!agent || agent.role !== "AGENT") {
       throw new AppError(403, "Agent not found or invalid role");
     }
@@ -213,6 +214,98 @@ const sendMoneyByUser = async (
 
 
 
+// agent transactionSevice
+
+
+const agentCashInToUser = async (agentId: string, userId: string, amount: number) => {
+  try {
+    if (!agentId || !userId || !amount || amount <= 0) {
+      throw new AppError(400, "Agent ID, User ID, and valid amount are required");
+    }
+
+    const agent = await User.findById(agentId);
+    const user = await User.findById(userId);
+
+    if (!agent || agent.role !== Role.AGENT) {
+      throw new AppError(403, "Only agents can perform cash-in");
+    }
+
+    if (!user || user.role !== Role.USER) {
+      throw new AppError(404, "User not found or invalid");
+    }
+
+    const userWallet = await WalletModel.findOne({ user: userId });
+    if (!userWallet) throw new AppError(404, "User wallet not found");
+
+    userWallet.balance += amount;
+    await userWallet.save();
+
+    const transaction = await TransactionModel.create({
+      transactionType: TransactionType.CASH_IN,
+      amount,
+      fromUser: agentId,
+      toUser: userId,
+      initiatedByUser: agentId,
+      status: TransactionStatus.COMPLETED,
+    });
+
+    return {
+      message: "Cash-in successful",
+      newUserBalance: userWallet.balance,
+      transaction,
+    };
+  } catch (error) {
+    throw (error);
+  }
+};
+
+const agentCashOutFromUser = async (agentId: string, userId: string, amount: number) => {
+  try {
+    if (!agentId || !userId || !amount || amount <= 0) {
+      throw new AppError(400, "Agent ID, User ID, and valid amount are required");
+    }
+
+    const agent = await User.findById(agentId);
+    const user = await User.findById(userId);
+
+    if (!agent || agent.role !== Role.AGENT) {
+      throw new AppError(403, "Only agents can perform cash-out");
+    }
+
+    if (!user || user.role !== Role.USER) {
+      throw new AppError(404, "User not found or invalid");
+    }
+
+    const userWallet = await WalletModel.findOne({ user: userId });
+    if (!userWallet) throw new AppError(404, "User wallet not found");
+
+    if (userWallet.balance < amount) {
+      throw new AppError(400, "Insufficient user balance");
+    }
+
+    userWallet.balance -= amount;
+    await userWallet.save();
+
+    const transaction = await TransactionModel.create({
+      transactionType: TransactionType.CASH_OUT,
+      amount,
+      fromUser: userId,
+      toUser: agentId,
+      initiatedByUser: agentId,
+      status: TransactionStatus.COMPLETED,
+    });
+
+    return {
+      message: "Cash-out successful",
+      newUserBalance: userWallet.balance,
+      transaction,
+    };
+  } catch (error) {
+    throw new AppError(500, (error as Error).message);
+  }
+};
+
+
 
 
 export const transactionSevice={
@@ -220,5 +313,6 @@ export const transactionSevice={
   userTopUp,
   sendMoneyByUser,
   userWithdrawToAgent,
-
+  agentCashInToUser,
+  agentCashOutFromUser,
 }

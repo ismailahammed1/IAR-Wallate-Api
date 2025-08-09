@@ -7,9 +7,17 @@ import { envVars } from "../../config/envVars";
 
 const router = Router();
 
+router.patch("/approve/:id", checkAuth(Role.ADMIN,Role.SUPER_ADMIN), AuthController.approveAgentAndUser);
+
 router.post("/login", AuthController.credentialsLogin);
-router.post("/refresh-token", AuthController.getNewAccessToken);
+
+router.patch("/suspend/:id", checkAuth(Role.ADMIN,Role.SUPER_ADMIN), AuthController.suspendAgent);
+
+
+
 router.post("/logout", AuthController.logout);
+
+router.post("/refresh-token", AuthController.getNewAccessToken);
 router.post("/reset-password", checkAuth(...Object.values(Role)), AuthController.resetPassword);
 router.post("/change-password", checkAuth(...Object.values(Role)), AuthController.changePassword);
 router.post("/set-password", checkAuth(...Object.values(Role)), AuthController.setPassword);

@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-catch */
 
 import { AppError } from "../../errorHelpers/AppError";
 import { createNewAccessTokenWithRefreshToken } from "../../utils/userToken";
@@ -7,6 +8,8 @@ import bcryptjs from 'bcryptjs'
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
 import { StatusCodes } from "http-status-codes";
+import { isActive, Role, userStatus } from "../user/user.interface";
+import { Agent } from "../agent/agent.model";
 
 
 const getNewAccessToken = async (refreshToken: string) => {
@@ -71,9 +74,53 @@ const setPassword = async (newPassword: string, decodedToken: JwtPayload) => {
   await user.save();
 };
 
+const approveAgentAndUserRequest = async (userId: string, verifiedToken: JwtPayload) => {
+//  const verifiedROle=verifiedToken.role
+  // console.log("veri", verifiedROle);
+ 
+  if (![Role.ADMIN, Role.SUPER_ADMIN].includes(verifiedToken.role)) {
+    throw new AppError(StatusCodes.FORBIDDEN, "You are not authorized to approve agent requests");
+  }
+
+  // First try Agent
+  let user = await Agent.findById(userId);
+  if (!user) {
+    // Try User
+    user = await User.findById(userId);
+    if (!user) {
+      throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+    }
+  }
+
+  if ((user.role !== Role.AGENT && user.role !== Role.USER )|| user.userStatus !== userStatus.PENDING) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Only pending agents can be approved");
+  }
+
+  user.userStatus = userStatus.APPROVED;
+  user.approved = true;
+  user.isVerified = true;
+
+  await user.save();
+
+  return user;
+};
+
+ const suspendAgentRequest = async (id: string) => {
+  const agent = await Agent.findById(id);
+  if (!agent) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Agent not found");
+  }
+  agent.userStatus = userStatus.SUSPENDED;
+    agent.isActive = isActive.INACTIVE; 
+  await agent.save();
+  return agent;
+};
+
 export const authServices = {
   getNewAccessToken,
   resetPassword,
   changePassword,
   setPassword,
+  approveAgentAndUserRequest,
+  suspendAgentRequest
 };

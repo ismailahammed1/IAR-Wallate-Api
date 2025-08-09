@@ -11,13 +11,12 @@ import { JwtPayload } from "jsonwebtoken";
 
 
 const getMyWallet = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const loginUser = req.user as JwtPayload;
+  const userId = loginUser.userId;
 
-  const decodedToken = req.user as JwtPayload;
-  if (!decodedToken || !decodedToken.id) {
+  if (!userId) {
     return next(new AppError(StatusCodes.UNAUTHORIZED, 'User not authenticated'));
   }
-  const userId = decodedToken.id; // Assuming user ID is stored in req.user.id  
- 
 
   try {
     const wallet = await walletService.getWallet(userId);
@@ -25,7 +24,6 @@ const getMyWallet = catchAsync(async (req: Request, res: Response, next: NextFun
       return next(new AppError(StatusCodes.NOT_FOUND, 'Wallet not found for this user'));
     }
 
-     
     sendResponse(res, {
       success: true,
       statusCode: StatusCodes.OK,
@@ -79,6 +77,5 @@ export const walletContoller={
     getMyWallet,
     blockWallet,
     unblockWallet,
-  
 }
 

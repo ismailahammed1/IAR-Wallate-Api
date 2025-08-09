@@ -44,12 +44,12 @@ export interface Iuser {
   role: Role;
   userStatus?: userStatus;
   isVerified?: boolean;
+  approved?: boolean;
   wallet?: Types.ObjectId;
   auths: IAuthProvider[];
   nationalId?: string;
   profileImage?: string;
   dateOfBirth?: Date;
-  approved?: boolean;
   commissionRate?: number;
   createdAt?: Date;
   updatedAt?: Date;

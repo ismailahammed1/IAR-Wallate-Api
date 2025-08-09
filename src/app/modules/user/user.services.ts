@@ -6,23 +6,22 @@ import { IAuthProvider, Iuser, AuthProviderType, Role, } from "./user.interface"
 import { User } from "./user.model";
 import bcryptjs from 'bcryptjs'
 import { StatusCodes } from "http-status-codes";
+import { Agent } from "../agent/agent.model";
 
 const createUser = async (payload: Partial<Iuser>) => {
-  const { name, email, password, ...rest } = payload;
+  const { name, email, password, role = Role.USER, ...rest } = payload;
 
   if (!email || !password) {
     throw new AppError(400, "Email and password are required");
   }
 
-  const isUserExist = await User.findOne({ email });
-  if (isUserExist) {
-    throw new AppError(409, "User with this email already exists");
-  }
+   const isUserExist = await User.findOne({ email }) || await Agent.findOne({email});
+    if (isUserExist) {
+      throw new AppError(409, "User with this email already exists ");
+    }
 
-  const hashedPassword=await bcryptjs.hash(password as string, Number(envVars.BCRYPT_SALT_ROUND))
-  // const isPaswordMatch= await bcryptjs.compare(password as string, hashedPassword)
+  const hashedPassword = await bcryptjs.hash(password as string, Number(envVars.BCRYPT_SALT_ROUND));
 
-  
   const authProvider: IAuthProvider = {
     provider: AuthProviderType.CREDENTIAL,
     providerID: email,
@@ -31,13 +30,16 @@ const createUser = async (payload: Partial<Iuser>) => {
   const user = await User.create({
     name,
     email,
-    password:hashedPassword,
+    password: hashedPassword,
+    role, 
     auths: [authProvider],
-   ...rest,
+    ...rest,
   });
 
   return user;
 };
+
+
 const getAllUser = async (page = 1, limit = 1) => {
   const skip = (page - 1) * limit;
 

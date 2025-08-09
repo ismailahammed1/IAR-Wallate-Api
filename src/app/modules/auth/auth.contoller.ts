@@ -11,7 +11,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
 import { createUserTokens } from "../../utils/userToken";
 import passport from "passport";
-import { Iuser } from "../user/user.interface";
+import { Iuser, Role } from "../user/user.interface";
 
 const credentialsLogin = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 
@@ -158,6 +158,47 @@ const googleCallbackController = catchAsync(
   }
 );
 
+
+const approveAgentAndUser = catchAsync(async (req: Request, res: Response , next:NextFunction) => {
+  const loginUser = req.user as JwtPayload;
+  const userId = loginUser.userId;
+
+  // const role = loginUser.role;
+
+  // console.log("Logged in admin ID:", userId);
+  // console.log("Target user to promote:", req.params.id);
+  // console.log("role",role,loginUser );
+
+  if (!userId) {
+    return next(new AppError(StatusCodes.UNAUTHORIZED, "User not authenticated"));
+  }
+
+  const userOrAgent = await authServices.approveAgentAndUserRequest(req.params.id, loginUser );
+
+ const message =
+      userOrAgent.role === Role.AGENT
+        ? "Agent approved successfully"
+        : "User approved successfully";
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: message,
+    data: userOrAgent,
+  });
+});
+
+
+const suspendAgent = catchAsync(async (req: Request, res: Response) => {
+  const agent = await authServices.suspendAgentRequest(req.params.id);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Agent suspended successfully",
+    data: agent,
+  });
+});
+
 export const AuthController = {
   credentialsLogin,
   getNewAccessToken,
@@ -166,4 +207,6 @@ export const AuthController = {
   googleCallbackController,
   changePassword,
   setPassword,
+  approveAgentAndUser,
+  suspendAgent,
 };

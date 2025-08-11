@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import passport from "passport";
 import {
   Strategy as GoogleStrategy,
@@ -7,11 +6,26 @@ import {
   VerifyCallback,
 } from "passport-google-oauth20";
 import { Strategy as LocalStrategy } from "passport-local";
-import { User } from "../modules/user/user.model";
-import { isActive, Role } from "../modules/user/user.interface";
 import bcryptjs from "bcryptjs";
-import { envVars } from "./envVars";
 
+import { User } from "../modules/user/user.model";
+import { Agent } from "../modules/agent/agent.model";
+import { envVars } from "./envVars";
+import { isActive, Role } from "../modules/user/user.interface";
+
+function validateAccountStatus(user: any): string | null {
+  if (!user.isVerified) return "User is not verified";
+  if (user.isDeleted) return "User is deleted";
+  if (
+    user.isActive === isActive.BLOCKED ||
+    user.isActive === isActive.INACTIVE
+  ) {
+    return `User is ${user.isActive}`;
+  }
+  return null;
+}
+
+// Localstrategy
 passport.use(
   new LocalStrategy(
     {
@@ -20,52 +34,48 @@ passport.use(
     },
     async (email: string, password: string, done) => {
       try {
-        const isUserExist = await User.findOne({ email });
+        const user =
+          (await User.findOne({ email })) ||
+          (await Agent.findOne({ email }));
 
-        if (!isUserExist) {
+        if (!user) {
           return done(null, false, { message: "User does not exist" });
         }
 
-        if (!isUserExist.isVerified) {
-          return done(null, false, { message: "User is not verified" });
+        const statusError = validateAccountStatus(user);
+        if (statusError) {
+          return done(null, false, { message: statusError });
         }
 
-        if (
-          isUserExist &&
-          (isUserExist.isActive === isActive.BLOCKED ||
-            isUserExist.isActive === isActive.INACTIVE)
-        ) {
-          return done(null, false, {
-            message: `User is ${isUserExist.isActive}`,
-          }); 
-        }
-        
+        const isGoogleAuthenticated =
+          Array.isArray(user.auths) &&
+          user.auths.some(
+            (providerObj) => providerObj.provider === "google"
+          );
 
-        if (isUserExist.isDeleted) {
-          return done(null, false, { message: "User is deleted" });
-        }
-
-        const isGoogleAuthenticated = isUserExist.auths.some(
-          (providerObjects) => providerObjects.provider === "google"
-        );
-
-        if (isGoogleAuthenticated && !isUserExist.password) {
+        if (isGoogleAuthenticated && !user.password) {
           return done(null, false, {
             message:
               "You have authenticated through Google. Please login with Google and set a password first.",
           });
         }
 
+        if (!user.password) {
+          return done(null, false, {
+            message: "Password not set for this account.",
+          });
+        }
+
         const isPasswordMatched = await bcryptjs.compare(
           password,
-          isUserExist.password as string
+          user.password
         );
 
         if (!isPasswordMatched) {
           return done(null, false, { message: "Password does not match" });
         }
 
-        return done(null, isUserExist);
+        return done(null, user);
       } catch (error) {
         console.error("LocalStrategy error:", error);
         return done(error);
@@ -74,6 +84,7 @@ passport.use(
   )
 );
 
+//GooglStrategy
 passport.use(
   new GoogleStrategy(
     {
@@ -88,34 +99,28 @@ passport.use(
       done: VerifyCallback
     ) => {
       try {
-        const email = profile.emails?.[0].value;
+        const email = profile.emails?.[0]?.value;
 
         if (!email) {
-          return done(null, false, { mesaage: "No email found" });
+          return done(null, false, { message: "No email found" });
         }
 
-        let isUserExist = await User.findOne({ email });
-        if (isUserExist && !isUserExist.isVerified) {
-          return done(null, false, { message: "User is not verified" });
+        let user =
+          (await User.findOne({ email })) ||
+          (await Agent.findOne({ email }));
+
+        if (user) {
+          const statusError = validateAccountStatus(user);
+          if (statusError) {
+            return done(null, false, { message: statusError });
+          }
         }
 
-        if (
-          isUserExist &&
-          (isUserExist.isActive === isActive.BLOCKED ||
-            isUserExist.isActive === isActive.INACTIVE)
-        ) {
-          done(`User is ${isUserExist.isActive}`);
-        }
-
-        if (isUserExist && isUserExist.isDeleted) {
-          return done(null, false, { message: "User is deleted" });
-        }
-
-        if (!isUserExist) {
-          isUserExist = await User.create({
+        if (!user) {
+          user = await User.create({
             email,
             name: profile.displayName,
-            picture: profile.photos?.[0].value,
+            picture: profile.photos?.[0]?.value,
             role: Role.USER,
             isVerified: true,
             auths: [
@@ -127,26 +132,34 @@ passport.use(
           });
         }
 
-        return done(null, isUserExist);
+        return done(null, user);
       } catch (error) {
-        console.log("Google Strategy Error", error);
+        console.error("GoogleStrategy error:", error);
         return done(error);
       }
     }
   )
 );
 
-// Fix: Serialized user type to include userId and role
-passport.serializeUser((user: any, done: (err: any, id?: unknown) => void) => {
+
+
+passport.serializeUser((user: any, done) => {
   done(null, user._id);
 });
 
-passport.deserializeUser(async (id: string, done: any) => {
+passport.deserializeUser(async (id: string, done) => {
   try {
-    const user = await User.findById(id);
+    const user =
+      (await User.findById(id)) ||
+      (await Agent.findById(id));
+
+    if (!user) {
+      return done(null, false);
+    }
+
     done(null, user);
   } catch (error) {
-    console.log(error);
+    console.error("Deserialization error:", error);
     done(error);
   }
 });

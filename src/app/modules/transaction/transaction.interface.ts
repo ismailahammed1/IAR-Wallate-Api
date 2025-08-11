@@ -22,8 +22,8 @@ export interface ITransaction {
 
   fromUser?: Types.ObjectId | null;
   toUser?: Types.ObjectId | null;
-  from?: Types.ObjectId | string | null;
-  to?: Types.ObjectId | string | null;
+  fromAgent?: Types.ObjectId | string | null;
+  toAgent?: Types.ObjectId | string | null;
 
   amount: number;
   fee?: number;

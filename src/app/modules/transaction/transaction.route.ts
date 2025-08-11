@@ -17,6 +17,9 @@ router.post("/send-money", checkAuth(Role.USER), transactionContoller.sendMoney)
 
 router.post("/cash-in",checkAuth(Role.AGENT),transactionContoller.agentCashIn)
 router.post("/cash-out",checkAuth(Role.AGENT),transactionContoller.agentCashOut)
+router.get("/agent-transaction/",checkAuth(Role.ADMIN, Role.SUPER_ADMIN),transactionContoller.getAgentTransactions)
+router.get("/user-transaction/",checkAuth(Role.ADMIN, Role.SUPER_ADMIN),transactionContoller.  getUserTransactions
+)
 
 
 

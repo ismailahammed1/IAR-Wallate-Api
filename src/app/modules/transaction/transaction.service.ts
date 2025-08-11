@@ -9,6 +9,14 @@ import { Role } from "../user/user.interface";
 import { Agent } from "../agent/agent.model";
 
 
+const MINIMUM_BALANCE = 50;
+
+const ensureMinimumBalance = (currentBalance: number, withdrawalAmount: number) => {
+  if (currentBalance - withdrawalAmount < MINIMUM_BALANCE) {
+    throw new AppError(400, `User must maintain a minimum balance of ${MINIMUM_BALANCE} after withdrawal.`);
+  }
+};
+
 const addMoneyByUser = async (userId: string, amount: number) => {
   try {
       if (!userId || !amount || amount <= 0) {
@@ -23,7 +31,7 @@ const addMoneyByUser = async (userId: string, amount: number) => {
 
   const wallet = await WalletModel.findOne({ user: userId });
   if (!wallet) throw new AppError(404, "Wallet not found");
-
+ ensureMinimumBalance(wallet.balance, amount);
   wallet.balance += amount;
   await wallet.save();
 
@@ -52,12 +60,14 @@ const userTopUp = async (userId: string, amount: number) => {
     if (!userId || !amount || amount <= 0) {
     throw new AppError(400, "User ID and valid amount are required");
   }
+  
 
   const userWallet = await WalletModel.findOne({ user: userId });
 
   if (!userWallet) {
     throw new AppError(404, "User wallet not found");
   }
+ ensureMinimumBalance(userWallet.balance, amount);
 
   if (userWallet.status === AccountStatus.BLOCKED) {
     throw new AppError(403, "User wallet is blocked");
@@ -118,6 +128,7 @@ const userWithdrawToAgent = async (
     if (agentWallet.status === AccountStatus.BLOCKED) {
       throw new AppError(403, "Agent wallet is blocked");
     }
+   ensureMinimumBalance(userWallet.balance, amount);
 
     if (userWallet.balance < amount) {
       throw new AppError(400, "Insufficient user wallet balance");
@@ -182,7 +193,8 @@ const sendMoneyByUser = async (
     if (senderWallet.status === AccountStatus.BLOCKED) {
       throw new AppError(403, "Sender wallet is blocked");
     }
-    
+
+   ensureMinimumBalance(senderWallet.balance, amount);
     if (senderWallet.balance < amount) {
       throw new AppError(400, "Insufficient balance");
     }
@@ -202,9 +214,15 @@ const sendMoneyByUser = async (
       status: TransactionStatus.COMPLETED,
     });
     
+  
+    const populatedTransaction = await TransactionModel.findById(transaction._id)
+      .populate("fromUser", "name email role")
+      .populate("toUser", "name email role")
+      .populate("initiatedByUser", "name email role");
+
     return {
       message: "Money sent successfully",
-      transaction,
+      transaction: populatedTransaction,
       newSenderBalance: senderWallet.balance,
     };
   } catch (error) {
@@ -223,7 +241,7 @@ const agentCashInToUser = async (agentId: string, userId: string, amount: number
       throw new AppError(400, "Agent ID, User ID, and valid amount are required");
     }
 
-    const agent = await User.findById(agentId);
+    const agent = await Agent.findById(agentId);
     const user = await User.findById(userId);
 
     if (!agent || agent.role !== Role.AGENT) {
@@ -237,22 +255,26 @@ const agentCashInToUser = async (agentId: string, userId: string, amount: number
     const userWallet = await WalletModel.findOne({ user: userId });
     if (!userWallet) throw new AppError(404, "User wallet not found");
 
+   ensureMinimumBalance(userWallet.balance, amount);
     userWallet.balance += amount;
     await userWallet.save();
 
     const transaction = await TransactionModel.create({
       transactionType: TransactionType.CASH_IN,
       amount,
-      fromUser: agentId,
+      fromAgent: agentId,
       toUser: userId,
-      initiatedByUser: agentId,
+      initiatedByAgent: agentId,
       status: TransactionStatus.COMPLETED,
     });
-
+const populatedTransaction = await TransactionModel.findById(transaction._id)
+      .populate("fromAgent", "name email role")
+      .populate("toUser", "name email role")
+      .populate("initiatedByAgent", "name email role");
     return {
       message: "Cash-in successful",
       newUserBalance: userWallet.balance,
-      transaction,
+      transaction:populatedTransaction,
     };
   } catch (error) {
     throw (error);
@@ -265,7 +287,7 @@ const agentCashOutFromUser = async (agentId: string, userId: string, amount: num
       throw new AppError(400, "Agent ID, User ID, and valid amount are required");
     }
 
-    const agent = await User.findById(agentId);
+    const agent = await Agent.findById(agentId);
     const user = await User.findById(userId);
 
     if (!agent || agent.role !== Role.AGENT) {
@@ -278,7 +300,10 @@ const agentCashOutFromUser = async (agentId: string, userId: string, amount: num
 
     const userWallet = await WalletModel.findOne({ user: userId });
     if (!userWallet) throw new AppError(404, "User wallet not found");
-
+const MINIMUM_BALANCE=50
+if (userWallet.balance - amount < MINIMUM_BALANCE) {
+  throw new AppError(400, `User must maintain a minimum balance of ${MINIMUM_BALANCE} after withdrawal.`);
+}
     if (userWallet.balance < amount) {
       throw new AppError(400, "Insufficient user balance");
     }
@@ -291,7 +316,7 @@ const agentCashOutFromUser = async (agentId: string, userId: string, amount: num
       amount,
       fromUser: userId,
       toUser: agentId,
-      initiatedByUser: agentId,
+      initiatedByAgent: agentId,
       status: TransactionStatus.COMPLETED,
     });
 
@@ -304,8 +329,43 @@ const agentCashOutFromUser = async (agentId: string, userId: string, amount: num
     throw new AppError(500, (error as Error).message);
   }
 };
+const getUserTransactions = async () => {
+  try {
+   const users = await User.find({ role: "USER" }, "_id");
+const userIds = users.map(user => user._id);
+
+const transactions = await TransactionModel.find({
+ $or: [
+
+      { initiatedByUser: { $in: userIds } }
+    ]
+});
+
+    return transactions;
+  } catch (error) {
+    throw error;
+  }
+};
 
 
+
+ const getAgentTransactions = async () => {
+  try {
+    const agents = await Agent.find({ role: "AGENT" }).select("_id");
+    const agentIds = agents.map(agent => agent._id);
+    
+    const transactions = await TransactionModel.find({
+   $or: [
+      { initiatedByAgent: { $in: agentIds } },
+    ]
+    });
+
+       return transactions
+
+  } catch (error) {
+   throw (error)
+  }
+};
 
 
 export const transactionSevice={
@@ -315,4 +375,6 @@ export const transactionSevice={
   userWithdrawToAgent,
   agentCashInToUser,
   agentCashOutFromUser,
+  getAgentTransactions,
+  getUserTransactions,
 }

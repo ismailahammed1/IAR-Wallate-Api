@@ -13,9 +13,9 @@ router.post("/login", AuthController.credentialsLogin);
 
 router.patch("/suspend/:id", checkAuth(Role.ADMIN,Role.SUPER_ADMIN), AuthController.suspendAgent);
 
-
-
 router.post("/logout", AuthController.logout);
+
+
 
 router.post("/refresh-token", AuthController.getNewAccessToken);
 router.post("/reset-password", checkAuth(...Object.values(Role)), AuthController.resetPassword);

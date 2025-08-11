@@ -10,7 +10,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import { JwtPayload } from "jsonwebtoken";
 import { WalletModel } from "../wallet/wallet.model";
 import { AccountStatus } from "../wallet/wallet.interface";
-import { AppError } from "../../errorHelpers/AppError";
+
 
 
 const userRegister = catchAsync(

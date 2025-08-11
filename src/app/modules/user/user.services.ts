@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-dynamic-delete */
 
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
@@ -7,6 +8,7 @@ import { User } from "./user.model";
 import bcryptjs from 'bcryptjs'
 import { StatusCodes } from "http-status-codes";
 import { Agent } from "../agent/agent.model";
+import { IAgent } from "../agent/agent.interface";
 
 const createUser = async (payload: Partial<Iuser>) => {
   const { name, email, password, role = Role.USER, ...rest } = payload;
@@ -74,41 +76,71 @@ const getMe = async (userId: string) => {
 
 
 
-const userUpdated=async(userId: string, payload: Partial<Iuser>, decodedToken: JwtPayload)=>{
-         
+const userUpdated = async (
+  userId: string,
+  payload: Partial<Iuser & IAgent>,
+  decodedToken: JwtPayload
+) => {
+  // Use Set for faster & .includes()-free lookup
+  const allowedSelfUpdateFieldsSet = new Set([
+    "name",
+    "password",
+    "picture",
+    "phone",
+    "address",
+    "nationalId",
+    "profileImage",
+    "dateOfBirth",
+  ]);
+
+  const ifUserExist = await User.findById(userId) || await Agent.findById(userId);
+
+  if (!ifUserExist) {
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+  }
+
+  // Self-update restriction
+  if ((decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) && userId !== decodedToken.userId) {
+    throw new AppError(StatusCodes.UNAUTHORIZED, "You are not authorized");
+  }
+
+  // Admin cannot update SUPER_ADMIN
+  if (decodedToken.role === Role.ADMIN && ifUserExist.role === Role.SUPER_ADMIN) {
+    throw new AppError(StatusCodes.UNAUTHORIZED, "You are not authorized to update SUPER_ADMIN");
+  }
+
+  //  allowed fields (for USER / AGENT)
   if (decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) {
-        if (userId !== decodedToken.userId) {
-            throw new AppError(401, "You are not authorized")
-        }
+    Object.keys(payload).forEach((key) => {
+      if (!allowedSelfUpdateFieldsSet.has(key)) {
+        delete payload[key as keyof typeof payload];
+      }
+    });
+
+    // Restricted fields for user and agent 
+    if (
+      'role' in payload ||
+      'email' in payload ||
+      'isActive' in payload ||
+      'isDeleted' in payload ||
+      'isVerified' in payload
+    ) {
+      throw new AppError(StatusCodes.FORBIDDEN, "You are not authorized to update these fields");
     }
+  }
 
-    const ifUserExist = await User.findById(userId);
+  // Decide which model to update
+  const isUser = ifUserExist instanceof User;
+  const newUpdatedUser = isUser
+    ? await User.findByIdAndUpdate(userId, payload, { new: true, runValidators: true })
+    : await Agent.findByIdAndUpdate(userId, payload, { new: true, runValidators: true });
 
-    if (!ifUserExist) {
-        throw new AppError(StatusCodes.NOT_FOUND, "User Not Found")
-    }
+  return newUpdatedUser;
+};
 
-    if (decodedToken.role === Role.ADMIN && ifUserExist.role === Role.SUPER_ADMIN) {
-        throw new AppError(401, "You are not authorized")
-    }
-       if (payload.role) {
-        if (decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) {
-            throw new AppError(StatusCodes.FORBIDDEN, "You are not authorized");
-        }
-
-      if (payload.isActive || payload.isDeleted || payload.isVerified) {
-        if (decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) {
-            throw new AppError(StatusCodes.FORBIDDEN, "You are not authorized");
-        }
-    }
-
-    const newUpdatedUser = await User.findByIdAndUpdate(userId, payload, { new: true, runValidators: true })
-
-    return newUpdatedUser
-    }
     
   
-}
+
 
 export const UserServices = {
   createUser,

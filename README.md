@@ -8,7 +8,7 @@ This system allows **users**, **agents**, and **admins** to register, manage wal
 
 ## 📌 Features
 
-- 🔐 **JWT Authentication** (Login/Registration)
+
 - 🎭 **Role-Based Access Control** (`admin`, `agent`, `user`)
 - 🏦 **Wallet Management** with balance and status tracking
 - 💸 **Transactional Logic** (add, withdraw, send money)
@@ -17,6 +17,52 @@ This system allows **users**, **agents**, and **admins** to register, manage wal
 - 🛑 **Admin Controls**: approve/suspend agents, block wallets
 - 🧱 Clean modular architecture using MVC pattern
 - 🧪 Tested via Postman
+- 🔐 **JWT Authentication** (Login/Registration) with Role-based Access Control (Admin / User / Agent)
+
+- 🏦 **Wallet Management** with balance and status tracking
+
+*Add Money (User → Wallet)*
+
+*Withdraw Money*
+
+*Send Money (User → User)*
+
+*Cash In / Cash Out (Agent)*
+
+*Commission Tracking for Agents*
+
+**Admin Controls:**
+
+*Block / Unblock Wallet*
+
+*Approve / Suspend Agents*
+
+*View All Transactions (User & Agent)*
+
+**Transaction Logging:**
+
+*Stores sender/receiver, amount, type, date, commission*
+
+**Profile Management:**
+
+*Users/Agents can update only their name, phone, address, profile image, DOB, national ID*
+
+*Only Admin can update role and email*
+
+**Validation & Error Handling:**
+
+*Centralized error handler with HTTP status codes*
+
+*Input validation with Zod*
+
+*Database:*
+
+*MongoDB with separate collections for User, Agent, Wallet, Transaction*
+
+*Unit Tests:*
+
+*Coverage for all wallet operations, role restrictions, and transactions*
+
 
 ---
 
@@ -27,5 +73,5 @@ This system allows **users**, **agents**, and **admins** to register, manage wal
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/digital-wallet-api.git
+git clone https://github.com/ismailahammed1/IAR-Wallate-Api
 cd digital-wallet-api

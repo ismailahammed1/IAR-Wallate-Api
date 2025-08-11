@@ -32,7 +32,7 @@ export enum userStatus {
 
 export interface Iuser {
      _id?: Types.ObjectId | string;
-  userId?: Types.ObjectId | string; // Optional for backward compatibility
+  userId?: Types.ObjectId | string; 
   name: string;
   email: string;
   password?: string;

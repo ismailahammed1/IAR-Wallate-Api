@@ -21,8 +21,10 @@ const TransactionSchema = new Schema<ITransaction>(
 
     fromUser: { type: Schema.Types.ObjectId, ref: "User", default: null },
     toUser: { type: Schema.Types.ObjectId, ref: "User", default: null },
-    from: { type: Schema.Types.ObjectId, ref: "User", default: null },
-    to: { type: Schema.Types.ObjectId, ref: "User", default: null },
+
+    // For Agents
+    fromAgent: { type: Schema.Types.ObjectId, ref: "Agent", default: null },
+    toAgent: { type: Schema.Types.ObjectId, ref: "Agent", default: null },
 
 
     amount: { type: Number, required: true },

@@ -35,6 +35,18 @@ const getMyWallet = catchAsync(async (req: Request, res: Response, next: NextFun
   }
 });
 
+const getMyTransactions = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const user = req.user as JwtPayload;
+  const userId = user.userId;
+
+  const transactions = await walletService.getMyTransactions(userId);
+
+  res.status(200).json({
+    success: true,
+    message: "Transaction history fetched successfully",
+    data: transactions,
+  });
+});
 
 
 const blockWallet = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -77,5 +89,6 @@ export const walletContoller={
     getMyWallet,
     blockWallet,
     unblockWallet,
+    getMyTransactions,
 }
 

@@ -48,8 +48,50 @@ const agentRegister = catchAsync(
 
 
 
+const getAllAgent = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const result = await AgentService.getAllAgent(page, limit);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "All users retrieved successfully",
+      data: result.data,
+      meta: result.meta,
+    });
+  }
+);
+
+const getAgentHimSelf = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const decodedToken = req.user as JwtPayload
+    const agent = await AgentService.getAgentHimSelf(decodedToken.userId);
+    console.log(agent, decodedToken);
+    
+    sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.CREATED,
+        message: "Your profile Retrieved Successfully",
+        data: agent.data
+    })
+})
+const getSingleAgent = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id;
+    const result = await AgentService.getSingleAgent(id);
+    sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.CREATED,
+        message: "User Retrieved Successfully",
+        data: result.data
+    })
+})
 
 
 export const agentContoller = {
   agentRegister,
+  getAgentHimSelf,
+  getAllAgent,
+  getSingleAgent,
 };

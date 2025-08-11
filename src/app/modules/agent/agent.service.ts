@@ -4,8 +4,6 @@
 import { AppError } from "../../errorHelpers/AppError";
 import { Agent } from "./agent.model";
 import { AuthProviderType, IAuthProvider, Role, } from "../user/user.interface";
-
-import { User } from "../user/user.model";
 import { IAgent } from "./agent.interface";
 import { envVars } from "../../config/envVars";
 import bcryptjs from 'bcryptjs';
@@ -19,7 +17,7 @@ const agentCreate= async(payload: Partial<IAgent>)=>{
     throw new AppError(400, "Email and password are required");
   }
 
-  const isUserExist = await User.findOne({ email }) || await Agent.findOne({email});
+  const isUserExist = await Agent.findOne({email});
   if (isUserExist) {
     throw new AppError(409, "User with this email already exists ");
   }
@@ -48,10 +46,37 @@ const agentCreate= async(payload: Partial<IAgent>)=>{
 
 
 
+const getAllAgent = async (page = 1, limit = 1) => {
+  const skip = (page - 1) * limit;
 
+  const [Agents, total] = await Promise.all([
+    Agent.find({}).skip(skip).limit(limit),
+    Agent.countDocuments({}),
+  ]);
 
+  return {
+    data: Agents,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
+    },
+  };
+};
 
-
+const getSingleAgent = async (id: string) => {
+    const Agents = await Agent.findById(id).select("-password");
+    return {
+        data: Agents
+    }
+};
+const getAgentHimSelf = async (userId: string) => {
+    const Agents = await Agent.findById(userId).select("-password");
+    return {
+        data: Agents
+    }
+};
 
 
 // const reactivateAgentRequest = async (id: string) => {
@@ -60,11 +85,11 @@ const agentCreate= async(payload: Partial<IAgent>)=>{
 //     throw new AppError(StatusCodes.NOT_FOUND, "Agent not found");
 //   }
 
-//   if (agent.status !== userStatus.SUSPENDED) {
+//   if (agent.status !== AgentStatus.SUSPENDED) {
 //     throw new AppError(StatusCodes.BAD_REQUEST, "Agent is not suspended");
 //   }
 
-//   agent.status = userStatus.APPROVED;
+//   agent.status = AgentStatus.APPROVED;
 //   agent.isActive = isActive.ACTIVE;// Reactivate the agent
 //   await agent.save();
 
@@ -75,5 +100,8 @@ const agentCreate= async(payload: Partial<IAgent>)=>{
 export const AgentService = {
 
     agentCreate,
+      getAllAgent,
+getAgentHimSelf,
+getSingleAgent
     // reactivateAgentRequest,
 };

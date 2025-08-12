@@ -76,8 +76,8 @@ passport.use(
         }
 
         return done(null, user);
+
       } catch (error) {
-        console.error("LocalStrategy error:", error);
         return done(error);
       }
     }
@@ -134,7 +134,7 @@ passport.use(
 
         return done(null, user);
       } catch (error) {
-        console.error("GoogleStrategy error:", error);
+      
         return done(error);
       }
     }
@@ -159,7 +159,7 @@ passport.deserializeUser(async (id: string, done) => {
 
     done(null, user);
   } catch (error) {
-    console.error("Deserialization error:", error);
+
     done(error);
   }
 });

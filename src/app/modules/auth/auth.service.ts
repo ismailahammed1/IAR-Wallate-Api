@@ -1,4 +1,3 @@
-/* eslint-disable no-useless-catch */
 
 import { AppError } from "../../errorHelpers/AppError";
 import { createNewAccessTokenWithRefreshToken } from "../../utils/userToken";

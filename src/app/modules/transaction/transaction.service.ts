@@ -304,7 +304,7 @@ const getAgentTransactions = async () => {
   return transactions;
 };
 
-export const transactionService = {
+export const transactionSevice = {
   addMoneyByUser,
   userTopUp,
   sendMoneyByUser,

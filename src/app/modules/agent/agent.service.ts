@@ -1,5 +1,4 @@
 /* eslint-disable no-useless-catch */
-// services/agent.service.ts
 
 import { AppError } from "../../errorHelpers/AppError";
 import { Agent } from "./agent.model";
@@ -47,7 +46,8 @@ const agentCreate= async(payload: Partial<IAgent>)=>{
 
 
 const getAllAgent = async (page = 1, limit = 1) => {
-  const skip = (page - 1) * limit;
+try {
+    const skip = (page - 1) * limit;
 
   const [Agents, total] = await Promise.all([
     Agent.find({}).skip(skip).limit(limit),
@@ -63,19 +63,31 @@ const getAllAgent = async (page = 1, limit = 1) => {
       totalPage: Math.ceil(total / limit),
     },
   };
+} catch (error) {
+  throw error
+}
 };
 
 const getSingleAgent = async (id: string) => {
-    const Agents = await Agent.findById(id).select("-password");
+  try {
+      const Agents = await Agent.findById(id).select("-password");
     return {
         data: Agents
     }
+  } catch (error) {
+  throw error
+    
+  }
 };
 const getAgentHimSelf = async (userId: string) => {
-    const Agents = await Agent.findById(userId).select("-password");
+   try {
+     const Agents = await Agent.findById(userId).select("-password");
     return {
         data: Agents
     }
+   } catch (error) {
+    throw error
+   }
 };
 
 

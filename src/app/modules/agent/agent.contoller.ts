@@ -8,7 +8,6 @@ import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { AgentService } from "./agent.service";
 import { JwtPayload } from "jsonwebtoken";
-import { AppError } from "../../errorHelpers/AppError";
 import { WalletModel } from "../wallet/wallet.model";
 import { AccountStatus } from "../wallet/wallet.interface";
 
@@ -68,7 +67,6 @@ const getAllAgent = catchAsync(
 const getAgentHimSelf = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user as JwtPayload
     const agent = await AgentService.getAgentHimSelf(decodedToken.userId);
-    console.log(agent, decodedToken);
     
     sendResponse(res, {
         success: true,

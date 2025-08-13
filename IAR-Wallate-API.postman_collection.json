@@ -4,7 +4,8 @@
 		"name": "IAR-Wallate-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "28726522",
-		"_collection_link": "https://red-moon-891834.postman.co/workspace/Team-Workspace~d4c8219c-0de5-429e-8358-c10d6138b277/collection/28726522-14524328-15c7-4f28-af36-12e74b026038?action=share&source=collection_link&creator=28726522"
+		"_collection_link": "https://red-moon-891834.postman.co/workspace/d4c8219c-0de5-429e-8358-c10d6138b277/collection/28726522-14524328-15c7-4f28-af36-12e74b026038?action=share&source=collection_link&creator=28726522"
+		
 	},
 	"item": [
 		{
@@ -25,12 +26,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/user/register",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/user/register",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -53,12 +52,10 @@
 							}
 						],
 						"url": {
-							"raw": "http://localhost:5000/api/v1/user/all-users",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/user/all-users",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -76,13 +73,13 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODkyZTQwMTgyODE2OGZlMTg0MzBjMzciLCJlbWFpbCI6InN1cGVyYWRtaW5AZ21haWwuY29tIiwicm9sZSI6IlNVUEVSX0FETUlOIiwiaWF0IjoxNzU0ODM5MTE2LCJleHAiOjE3NTQ5MjU1MTZ9.xnpzoFveCOcOAiLum4KLql_ZyxsfztyDXNy9IokVeek",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODljYzYzMTZiODEyNzZkYmM4ZDljNDkiLCJlbWFpbCI6InN1cGVyYWRtaW5AZ21haWwuY29tIiwicm9sZSI6IlNVUEVSX0FETUlOIiwiaWF0IjoxNzU1MTA1NzQzLCJleHAiOjE3NTUxOTIxNDN9.0QaP908O6HPZXp6-s8jI2jpFl2gsWexnVKjx2qxHf-k",
 								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"role\": \"USER\"\r\n}",
+							"raw": "{\r\n  \"role\": \"ADMIN\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -90,17 +87,15 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/user/6896f1f2597a707a6c43d28a",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/user/689cc6a66b81276dbc8d9c51",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
 								"user",
-								"6896f1f2597a707a6c43d28a"
+								"689cc6a66b81276dbc8d9c51"
 							]
 						}
 					},
@@ -125,12 +120,10 @@
 							"raw": "{\r\n    \"email\": \"Ismail@gmail.com\",\r\n    \"password\": \"Ismail@123456\"\r\n}"
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/user/me",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/user/me",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -153,12 +146,10 @@
 							}
 						],
 						"url": {
-							"raw": "http://localhost:5000/api/v1/user/6892dfe8bb7a742607563c9e",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/user/6892dfe8bb7a742607563c9e",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -187,7 +178,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"email\": \"Ismail@gmail.com\",\r\n    \"password\": \"Ismail@123456\"\r\n}",
+							"raw": "{\r\n    \"email\": \"superadmin@gmail.com\",\r\n    \"password\": \"Ismail@123456\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -195,12 +186,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/auth/login",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/auth/login",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -226,12 +215,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/auth/refresh-token",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/auth/refresh-token",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -252,12 +239,10 @@
 							"raw": "{\r\n    \"email\": \"Ismail@gmail.com\",\r\n    \"password\": \"Ismail@123456\"\r\n}"
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/auth/logout",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/auth/logout",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -289,12 +274,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/auth/reset-password",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/auth/reset-password",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -317,12 +300,10 @@
 							}
 						],
 						"url": {
-							"raw": "http://localhost:5000/api/v1/auth/suspend/6897013bcf7207f1d40444c1",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/auth/suspend/6897013bcf7207f1d40444c1",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -335,13 +316,13 @@
 					"response": []
 				},
 				{
-					"name": "agentapprove",
+					"name": "agent&user-verify",
 					"request": {
 						"method": "PATCH",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODkyZTQwMTgyODE2OGZlMTg0MzBjMzciLCJlbWFpbCI6InN1cGVyYWRtaW5AZ21haWwuY29tIiwicm9sZSI6IlNVUEVSX0FETUlOIiwiaWF0IjoxNzU0ODM5MTE2LCJleHAiOjE3NTQ5MjU1MTZ9.xnpzoFveCOcOAiLum4KLql_ZyxsfztyDXNy9IokVeek",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODljYzYzMTZiODEyNzZkYmM4ZDljNDkiLCJlbWFpbCI6InN1cGVyYWRtaW5AZ21haWwuY29tIiwicm9sZSI6IlNVUEVSX0FETUlOIiwiaWF0IjoxNzU1MTA1MDAwLCJleHAiOjE3NTUxOTE0MDB9.3OfED8vzreyIw4Tq_ZbV8d5r3aIPqc6GFbjhWpSkBQc",
 								"type": "text"
 							}
 						],
@@ -355,18 +336,16 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/auth/approve/6898c34cc49ca8cb63f05cfb",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/auth/approve/689cc990ff8afc7d81739ee3",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
 								"auth",
 								"approve",
-								"6898c34cc49ca8cb63f05cfb"
+								"689cc990ff8afc7d81739ee3"
 							]
 						}
 					},
@@ -389,12 +368,10 @@
 							}
 						],
 						"url": {
-							"raw": "http://localhost:5000/api/v1/wallets/me",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/wallets/me",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -417,12 +394,10 @@
 							}
 						],
 						"url": {
-							"raw": "http://localhost:5000/api/v1/wallets/transactions/me",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/wallets/transactions/me",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -455,12 +430,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/wallets/block/6892dfe9bb7a742607563ca0",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/wallets/block/6892dfe9bb7a742607563ca0",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -493,12 +466,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/wallets/unblock/6892dfe9bb7a742607563ca0",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/wallets/unblock/6892dfe9bb7a742607563ca0",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -530,12 +501,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/agent/agent-register",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/agent/agent-register",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -570,12 +539,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/agent/all-agents",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/agent/all-agents",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -610,12 +577,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/agent/6898c34cc49ca8cb63f05cfb",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/agent/6898c34cc49ca8cb63f05cfb",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -650,12 +615,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/agent/me",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/agent/me",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -692,54 +655,15 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transactions/add-money",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/transactions/add-money",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
 								"transactions",
 								"add-money"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "topup",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODk2ZjFmMjU5N2E3MDdhNmM0M2QyOGEiLCJlbWFpbCI6IklzbWFpbEBnbWFpbC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc1NDg0MzQ4MSwiZXhwIjoxNzU0OTI5ODgxfQ.vsqA_loECAUPnnlv-gKQuBUgOVjDpUruRKtDm0aKRT0",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n   \"id\":\" 68922657108d086acec036e5\",\r\n  \"amount\": 50  // or \"ACTIVE\", \"INACTIVE\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:5000/api/v1/transactions/top-up",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"v1",
-								"transactions",
-								"top-up"
 							]
 						}
 					},
@@ -766,12 +690,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transactions/withdraw",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/transactions/withdraw",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -803,12 +725,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transactions/send-money",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/transactions/send-money",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -840,12 +760,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transactions/cash-in",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/transactions/cash-in",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -877,12 +795,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transactions/cash-out",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/transactions/cash-out",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -894,7 +810,7 @@
 					"response": []
 				},
 				{
-					"name": "all transaction",
+					"name": "all agent transaction",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -905,12 +821,10 @@
 							}
 						],
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transactions/agent-transaction",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/transactions/agent-transaction",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",
@@ -922,7 +836,7 @@
 					"response": []
 				},
 				{
-					"name": "all transaction Copy",
+					"name": "all user transaction",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
@@ -940,12 +854,10 @@
 							"raw": "{\r\n    \"userId\":\"689570b04fae7c47dbf054b0\", \"amount\":10 \r\n}"
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transactions/all-transaction",
-							"protocol": "http",
+							"raw": "{{base_url}}/api/v1/transactions/all-transaction",
 							"host": [
-								"localhost"
+								"{{base_url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"v1",

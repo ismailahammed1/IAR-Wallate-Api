@@ -7,31 +7,22 @@ import { TransactionStatus, TransactionType } from "./transaction.interface";
 import { User } from "../user/user.model";
 import { Role } from "../user/user.interface";
 import { Agent } from "../agent/agent.model";
-
-const minimumBalance = 50;
-
-const ensureMinimumBalance = (currentBalance: number, useAmount: number) => {
-  if (currentBalance - useAmount < minimumBalance) {
-    throw new AppError(400, `User must maintain a minimum balance of ${minimumBalance} after withdrawal.`);
-  }
-};
+import { StatusCodes } from "http-status-codes";
 
 //Add Money by Approved User
 const addMoneyByUser = async (userId: string, amount: number) => {
   if (!userId || !amount || amount <= 0) {
-    throw new AppError(400, "User ID and valid amount are required");
+    throw new AppError(StatusCodes.BAD_REQUEST, "User ID and valid amount are required");
   }
 
   const user = await User.findById(userId);
-  if (!user) throw new AppError(404, "User not found");
+  if (!user) throw new AppError(StatusCodes.NOT_FOUND, "User not found");
   if (user.userStatus !== "APPROVED") {
-    throw new AppError(403, "Only approved users can add money");
+    throw new AppError(StatusCodes.FORBIDDEN, "Only approved users can add money");
   }
 
   const wallet = await WalletModel.findOne({ user: userId });
-  if (!wallet) throw new AppError(404, "Wallet not found");
-
-  ensureMinimumBalance(wallet.balance, amount);
+  if (!wallet) throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
   wallet.balance += amount;
   await wallet.save();
 
@@ -51,67 +42,34 @@ const addMoneyByUser = async (userId: string, amount: number) => {
   };
 };
 
-//Top-Up Wallet (User)
-const userTopUp = async (userId: string, amount: number) => {
-  if (!userId || !amount || amount <= 0) {
-    throw new AppError(400, "User ID and valid amount are required");
-  }
-
-  const userWallet = await WalletModel.findOne({ user: userId });
-  if (!userWallet) throw new AppError(404, "User wallet not found");
-
-  if (userWallet.status === AccountStatus.BLOCKED) {
-    throw new AppError(403, "User wallet is blocked");
-  }
-
-  ensureMinimumBalance(userWallet.balance, amount);
-
-  userWallet.balance += amount;
-  await userWallet.save();
-
-  await TransactionModel.create({
-    transactionType: TransactionType.ADD,
-    amount,
-    fromUser: userId,
-    toUser: userId,
-    initiatedByUser: userId,
-    status: TransactionStatus.COMPLETED,
-  });
-
-  return {
-    balance: userWallet.balance,
-    amountAdded: amount,
-  };
-};
-
 //Withdraw by User to Agent
 const userWithdrawToAgent = async (userId: string, agentId: string, amount: number) => {
   if (!userId || !agentId || !amount || amount <= 0) {
-    throw new AppError(400, "User ID, Agent ID, and valid amount are required");
+    throw new AppError(StatusCodes.BAD_REQUEST, "User ID, Agent ID, and valid amount are required");
   }
 
   const user = await User.findById(userId);
   if (!user || user.role !== Role.USER) {
-    throw new AppError(403, "Invalid user or not authorized");
+    throw new AppError(StatusCodes.FORBIDDEN, "Invalid user or not authorized");
   }
 
   const agent = await Agent.findById(agentId);
   if (!agent || agent.role !== Role.AGENT) {
-    throw new AppError(403, "Agent not found or invalid role");
+    throw new AppError(StatusCodes.FORBIDDEN, "Agent not found or invalid role");
   }
 
   const userWallet = await WalletModel.findOne({ user: userId });
   const agentWallet = await WalletModel.findOne({ user: agentId });
 
-  if (!userWallet) throw new AppError(404, "User wallet not found");
-  if (!agentWallet) throw new AppError(404, "Agent wallet not found");
+  if (!userWallet) throw new AppError(StatusCodes.NOT_FOUND, "User wallet not found");
+  if (!agentWallet) throw new AppError(StatusCodes.NOT_FOUND, "Agent wallet not found");
 
-  if (userWallet.status === AccountStatus.BLOCKED) throw new AppError(403, "User wallet is blocked");
-  if (agentWallet.status === AccountStatus.BLOCKED) throw new AppError(403, "Agent wallet is blocked");
+  if (userWallet.status === AccountStatus.BLOCKED) throw new AppError(StatusCodes.FORBIDDEN, "User wallet is blocked");
+  if (agentWallet.status === AccountStatus.BLOCKED) throw new AppError(StatusCodes.FORBIDDEN, "Agent wallet is blocked");
 
-  ensureMinimumBalance(userWallet.balance, amount);
 
-  if (userWallet.balance < amount) throw new AppError(400, "Insufficient user wallet balance");
+
+  if (userWallet.balance < amount) throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient user wallet balance");
 
   userWallet.balance -= amount;
   agentWallet.balance += amount;
@@ -139,30 +97,30 @@ const userWithdrawToAgent = async (userId: string, agentId: string, amount: numb
 //User to User Transfer
 const sendMoneyByUser = async (senderId: string, receiverId: string, amount: number) => {
   if (!senderId || !receiverId || !amount || amount <= 0) {
-    throw new AppError(400, "Sender, receiver, and valid amount are required");
+    throw new AppError(StatusCodes.BAD_REQUEST, "Sender, receiver, and valid amount are required");
   }
 
   const senderUser = await User.findById(senderId);
   const receiverUser = await User.findById(receiverId);
 
-  if (!senderUser || !receiverUser) throw new AppError(404, "Sender or receiver user not found");
+  if (!senderUser || !receiverUser) throw new AppError(StatusCodes.NOT_FOUND, "Sender or receiver user not found");
 
   if (senderUser.role !== Role.USER || receiverUser.role !== Role.USER) {
-    throw new AppError(403, "Only USER to USER transfers are allowed");
+    throw new AppError(StatusCodes.FORBIDDEN, "Only USER to USER transfers are allowed");
   }
 
   const senderWallet = await WalletModel.findOne({ user: senderId });
   const receiverWallet = await WalletModel.findOne({ user: receiverId });
 
-  if (!senderWallet || !receiverWallet) throw new AppError(404, "Sender or receiver wallet not found");
+  if (!senderWallet || !receiverWallet) throw new AppError(StatusCodes.NOT_FOUND, "Sender or receiver wallet not found");
 
   if (senderWallet.status === AccountStatus.BLOCKED) {
-    throw new AppError(403, "Sender wallet is blocked");
+    throw new AppError(StatusCodes.FORBIDDEN, "Sender wallet is blocked");
   }
 
-  ensureMinimumBalance(senderWallet.balance, amount);
 
-  if (senderWallet.balance < amount) throw new AppError(400, "Insufficient balance");
+
+  if (senderWallet.balance < amount) throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient balance");
 
   senderWallet.balance -= amount;
   receiverWallet.balance += amount;
@@ -194,25 +152,31 @@ const sendMoneyByUser = async (senderId: string, receiverId: string, amount: num
 //Agent Cash In to User
 const agentCashInToUser = async (agentId: string, userId: string, amount: number) => {
   if (!agentId || !userId || !amount || amount <= 0) {
-    throw new AppError(400, "Agent ID, User ID, and valid amount are required");
+    throw new AppError(StatusCodes.BAD_REQUEST, "Agent ID, User ID, and valid amount are required");
   }
 
   const agent = await Agent.findById(agentId);
   const user = await User.findById(userId);
 
   if (!agent || agent.role !== Role.AGENT) {
-    throw new AppError(403, "Only agents can perform cash-in");
+    throw new AppError(StatusCodes.FORBIDDEN, "Only agents can perform cash-in");
   }
 
   if (!user || user.role !== Role.USER) {
-    throw new AppError(404, "User not found or invalid");
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found or invalid");
   }
 
   const userWallet = await WalletModel.findOne({ user: userId });
-  if (!userWallet) throw new AppError(404, "User wallet not found");
+  if (!userWallet) throw new AppError(StatusCodes.NOT_FOUND, "User wallet not found");
+
+  if (userWallet.balance < amount) {
+  throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient user wallet balance");
+}
 
   userWallet.balance += amount;
   await userWallet.save();
+
+
 
   const transaction = await TransactionModel.create({
     transactionType: TransactionType.CASH_IN,
@@ -238,27 +202,27 @@ const agentCashInToUser = async (agentId: string, userId: string, amount: number
 //Agent Cash Out from User
 const agentCashOutFromUser = async (agentId: string, userId: string, amount: number) => {
   if (!agentId || !userId || !amount || amount <= 0) {
-    throw new AppError(400, "Agent ID, User ID, and valid amount are required");
+    throw new AppError(StatusCodes.BAD_REQUEST, "Agent ID, User ID, and valid amount are required");
   }
 
   const agent = await Agent.findById(agentId);
   const user = await User.findById(userId);
 
   if (!agent || agent.role !== Role.AGENT) {
-    throw new AppError(403, "Only agents can perform cash-out");
+    throw new AppError(StatusCodes.FORBIDDEN, "Only agents can perform cash-out");
   }
 
   if (!user || user.role !== Role.USER) {
-    throw new AppError(404, "User not found or invalid");
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found or invalid");
   }
 
   const userWallet = await WalletModel.findOne({ user: userId });
-  if (!userWallet) throw new AppError(404, "User wallet not found");
+  if (!userWallet) throw new AppError(StatusCodes.NOT_FOUND, "User wallet not found");
 
-  ensureMinimumBalance(userWallet.balance, amount);
+
 
   if (userWallet.balance < amount) {
-    throw new AppError(400, "Insufficient user balance");
+    throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient user balance");
   }
 
   userWallet.balance -= amount;
@@ -306,7 +270,6 @@ const getAgentTransactions = async () => {
 
 export const transactionSevice = {
   addMoneyByUser,
-  userTopUp,
   sendMoneyByUser,
   userWithdrawToAgent,
   agentCashInToUser,

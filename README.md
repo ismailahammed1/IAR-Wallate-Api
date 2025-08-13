@@ -1,6 +1,6 @@
 # 💸 Digital Wallet API
 
-A secure, modular, and role-based backend API for a **digital wallet system** (inspired by Bkash/Nagad), built with **Express.js**, **TypeScript**, and **MongoDB**.
+Hi I'm MD. Ismail Ahammed Roman and create A secure, modular, and role-based backend API for a **digital wallet system** (inspired by Bkash/Nagad), built with **Express.js**, **TypeScript**, **MongoDB** and use many other technology's.
 
 This system allows **users**, **agents**, and **admins** to register, manage wallets, perform transactions (add/withdraw/send money), and includes robust authentication and authorization mechanisms.
 
@@ -21,15 +21,6 @@ This system allows **users**, **agents**, and **admins** to register, manage wal
 
 - 🏦 **Wallet Management** with balance and status tracking
 
-*Add Money (User → Wallet)*
-
-*Withdraw Money*
-
-*Send Money (User → User)*
-
-*Cash In / Cash Out (Agent)*
-
-*Commission Tracking for Agents*
 
 **Admin Controls:**
 
@@ -40,8 +31,17 @@ This system allows **users**, **agents**, and **admins** to register, manage wal
 *View All Transactions (User & Agent)*
 
 **Transaction Logging:**
+*Add Money (User → Wallet)*
 
-*Stores sender/receiver, amount, type, date, commission*
+*Withdraw Money (User → agent Wallet)* 
+
+*Send Money (User → User)*
+
+*Cash In / Cash Out (Agent)*
+
+*Commission Tracking for Agents*
+
+*Stores sender/receiver, amount, type, date*
 
 **Profile Management:**
 
@@ -66,13 +66,27 @@ This system allows **users**, **agents**, and **admins** to register, manage wal
 
 ---
 
-## ⚙️ Setup & Installation
+## ⚙️ Setup & Installation Tech Stack
     express-session, bcrypt, bcryptjs, cookie-parser, cors, dotenv,
     express, express-session, http-status-codes, jsonwebtoken, mongoose,
     passport, passport-google-oauth20, passport-local,
 
 
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/ismailahammed1/IAR-Wallate-Api
+cd digital-wallet-api
 ```
+### 1. livelink
+``` https://iar-wallet-api.vercel.app/ ```
+### 1. Video Explanation
+``` https://iar-wallet-api.vercel.app/ ```
+
+
+### API Endpoint’s with descriptions
+```
+
   "auth": {
     "approve PATCH": {
       "note": "only admin approved user and admin, Without approval, users or agents cannot log in. Required: isVerified = true, approved = true, userStatus = true .",
@@ -262,9 +276,8 @@ This system allows **users**, **agents**, and **admins** to register, manage wal
 
 ```
 
-### 1. Clone the Repository
 
 
-```bash
-git clone https://github.com/ismailahammed1/IAR-Wallate-Api
-cd digital-wallet-api
+
+
+

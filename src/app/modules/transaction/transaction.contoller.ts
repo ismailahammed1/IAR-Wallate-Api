@@ -23,20 +23,6 @@ const userAddMoney = catchAsync(async (req: Request, res: Response, next:NextFun
   });
 });
 
-const userTopUp = catchAsync(async (req: Request, res: Response, next:NextFunction ) => {
-  const decodedToken = req.user as JwtPayload;
-  const user = decodedToken.userId;
-  const { amount } = req.body;
-
-  const result = await transactionSevice.userTopUp(user, amount);
-
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Top-up successful",
-    data: result,
-  });
-});
 
 const userWithdrawToAgent = catchAsync(async (req: Request, res: Response, next:NextFunction ) => {
   const decodedToken = req.user as JwtPayload;
@@ -154,7 +140,7 @@ const getUserTransactions = catchAsync(
 
 export const transactionContoller = {
   userAddMoney,
-  userTopUp,
+
   userWithdrawToAgent,
   sendMoney,
   agentCashIn,

@@ -81,11 +81,20 @@ cd digital-wallet-api
 ### 1. livelink
 ``` https://iar-wallet-api.vercel.app/ ```
 ### 1. Video Explanation
-``` https://iar-wallet-api.vercel.app/ ```
+``` 
+https://www.loom.com/share/3e48991de42846f78b8b45b8c3fc8846
+
+***Project Overview This is my first video recording of this project and I don't know if it will be better than this. For this, I have given the first video recording. I am very sorry for the sentence construction not being correct. Please watch it with a good eye.***
+
+ ```
+
+
 
 
 ### API Endpoint’s with descriptions
 ```
+ post man link: https://red-moon-891834.postman.co/workspace/Team-Workspace~d4c8219c-0de5-429e-8358-c10d6138b277/collection/28726522-14524328-15c7-4f28-af36-12e74b026038?action=share&creator=28726522&active-environment=28726522-3d5b8de8-aa5a-4a4e-92ad-9add3863f2f0
+
 
   "auth": {
     "approve PATCH": {

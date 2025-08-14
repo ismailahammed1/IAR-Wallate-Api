@@ -34,11 +34,13 @@ const addMoneyByUser = async (userId: string, amount: number) => {
     initiatedByUser: userId,
     status: TransactionStatus.COMPLETED,
   });
+  const populatedTransaction = await TransactionModel.findById(transaction._id)
+    .populate("initiatedByUser", "name email role");
 
   return {
     message: "Money added successfully",
     newBalance: wallet.balance,
-    transaction,
+    transaction:populatedTransaction,
   };
 };
 
@@ -86,11 +88,16 @@ const userWithdrawToAgent = async (userId: string, agentId: string, amount: numb
     status: TransactionStatus.COMPLETED,
   });
 
+  const populatedTransaction = await TransactionModel.findById(transaction._id)
+    .populate("fromUser", "name email role")
+    .populate("toAgent", "name email role")
+    .populate("initiatedByUser", "name email role");
+
   return {
     message: "User withdrew to agent successfully",
     userBalance: userWallet.balance,
     agentBalance: agentWallet.balance,
-    transaction,
+    transaction:populatedTransaction,
   };
 };
 
@@ -236,11 +243,15 @@ const agentCashOutFromUser = async (agentId: string, userId: string, amount: num
     initiatedByAgent: agentId,
     status: TransactionStatus.COMPLETED,
   });
+  const populatedTransaction = await TransactionModel.findById(transaction._id)
+    .populate("fromAgent", "name email role")
+    .populate("toUser", "name email role")
+    .populate("initiatedByAgent", "name email role");
 
   return {
     message: "Cash-out successful",
     newUserBalance: userWallet.balance,
-    transaction,
+    transaction: populatedTransaction,
   };
 };
 

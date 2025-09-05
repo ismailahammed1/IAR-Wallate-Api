@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 import app from './app';
 import { envVars } from './app/config/envVars';
 import { seedSuperAdmin } from './app/utils/seedSuperAdmin';
+import { connectRedish } from './app/config/redis.config';
 dotenv.config();
 
 let server:Server;
@@ -27,6 +28,7 @@ const startServer = async () => {
 }
 
 (async () => {
+  await connectRedish()
   await startServer();
   await seedSuperAdmin()
 })();

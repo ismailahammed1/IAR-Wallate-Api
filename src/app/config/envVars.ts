@@ -11,13 +11,17 @@ interface EnvConfig {
   JWT_REFRESH_SECRETS: string;
   JWT_REFRESH_EXPIRES: string;
   BCRYPT_SALT_ROUND: string;
-  SUPER_ADMIN_EMAIL:string;
-  SUPER_ADMIN_PASSWROD:string;
-  GOOGLE_CLIENT_ID:string;
-  GOOGLE_CLIENT_SECRET:string;
-  GOOGLE_CALLBACK_URL:string;
-  EXPRESS_SESSION_SECRET:string;
-  FRONT_END_URL:string
+  SUPER_ADMIN_EMAIL: string;
+  SUPER_ADMIN_PASSWROD: string;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  GOOGLE_CALLBACK_URL: string;
+  EXPRESS_SESSION_SECRET: string;
+  FRONT_END_URL: string;
+  REDIS_HOST: string;
+  REDIS_PORT: string;
+  REDIS_USERNAME: string;
+  REDIS_PASSWORD: string;
 }
 
 const loadEnvVariables = (): EnvConfig => {
@@ -37,7 +41,10 @@ const loadEnvVariables = (): EnvConfig => {
     "GOOGLE_CALLBACK_URL",
     "EXPRESS_SESSION_SECRET",
     "FRONT_END_URL",
-   
+    "REDIS_HOST",
+    "REDIS_PORT",
+    "REDIS_USERNAME",
+    "REDIS_PASSWORD",
   ];
   requierdEnvVariables.forEach((element) => {
     if (!process.env[element]) {
@@ -60,6 +67,10 @@ const loadEnvVariables = (): EnvConfig => {
     GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL as string,
     EXPRESS_SESSION_SECRET: process.env.EXPRESS_SESSION_SECRET as string,
     FRONT_END_URL: process.env.FRONT_END_URL as string,
+    REDIS_HOST: process.env.REDIS_HOST as string,
+    REDIS_PORT: process.env.REDIS_PORT as string,
+    REDIS_USERNAME: process.env.REDIS_USERNAME as string,
+    REDIS_PASSWORD: process.env.REDIS_PASSWORD as string,
   };
 };
 

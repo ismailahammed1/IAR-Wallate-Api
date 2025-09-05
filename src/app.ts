@@ -11,7 +11,10 @@ import { envVars } from "./app/config/envVars";
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: envVars.FRONT_END_URL,
+    credentials: true
+}))
 app.use(express.json());
 app.use(cookieParser());
 app.use(expressSession(

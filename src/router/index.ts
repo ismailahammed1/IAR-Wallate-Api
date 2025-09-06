@@ -4,6 +4,7 @@ import { AuthRoutes } from "../app/modules/auth/auth.route";
 import { walletRouter } from "../app/modules/wallet/wallet.router";
 import { AgentRoutes } from "../app/modules/agent/agent.route";
 import { TransactionRoutes } from "../app/modules/transaction/transaction.route";
+import { otpRoutes } from "../app/modules/otp/otp.route";
 
 export const router = Router()
 
@@ -27,6 +28,10 @@ const moduleRouter = [
   {
     path: "/transactions", 
     router: TransactionRoutes,
+  },
+  {
+    path: "/otp", 
+    router: otpRoutes,
   },
 ];
 moduleRouter.forEach(route => {

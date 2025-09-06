@@ -4,7 +4,7 @@ import { createNewAccessTokenWithRefreshToken } from "../../utils/userToken";
 
 import { User } from "../user/user.model";
 import bcryptjs from 'bcryptjs'
-import { JwtPayload } from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
 import { StatusCodes } from "http-status-codes";
 import { isActive, Role, userStatus } from "../user/user.interface";
@@ -73,6 +73,50 @@ const setPassword = async (newPassword: string, decodedToken: JwtPayload) => {
   await user.save();
 };
 
+
+
+
+const forgotPassword = async (email: string) => {
+    const isUserExist = await User.findOne({ email });
+
+    if (!isUserExist) {
+        throw new AppError(StatusCodes.BAD_REQUEST, "User does not exist")
+    }
+    if (!isUserExist.isVerified) {
+        throw new AppError(StatusCodes.BAD_REQUEST, "User is not verified")
+    }
+    if (isUserExist.isActive === isActive.BLOCKED || isUserExist.isActive === isActive.INACTIVE) {
+        throw new AppError(StatusCodes.BAD_REQUEST, `User is ${isUserExist.isActive}`)
+    }
+    if (isUserExist.isDeleted) {
+        throw new AppError(StatusCodes.BAD_REQUEST, "User is deleted")
+    }
+
+    const jwtPayload = {
+        userId: isUserExist._id,
+        email: isUserExist.email,
+        role: isUserExist.role
+    }
+
+    const resetToken = jwt.sign(jwtPayload, envVars.jwt_secret, {
+        expiresIn: "10m"
+    })
+
+    const resetUILink = `${envVars.FRONT_END_URL}/reset-password?id=${isUserExist._id}&token=${resetToken}`
+
+    // sendEmail({
+    //     to: isUserExist.email,
+    //     subject: "Password Reset",
+    //     templateName: "forgetPassword",
+    //     templateData: {
+    //         name: isUserExist.name,
+    //         resetUILink
+    //     }
+    // })
+
+  
+}
+
 const approveAgentAndUserRequest = async (userId: string, verifiedToken: JwtPayload) => {
 //  const verifiedROle=verifiedToken.role
   // console.log("veri", verifiedROle);
@@ -121,5 +165,6 @@ export const authServices = {
   changePassword,
   setPassword,
   approveAgentAndUserRequest,
-  suspendAgentRequest
+  suspendAgentRequest,
+  forgotPassword
 };

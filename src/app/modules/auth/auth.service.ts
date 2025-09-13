@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { AppError } from "../../errorHelpers/AppError";
 import { createNewAccessTokenWithRefreshToken } from "../../utils/userToken";
@@ -9,6 +10,7 @@ import { envVars } from "../../config/envVars";
 import { StatusCodes } from "http-status-codes";
 import { isActive, Role, userStatus } from "../user/user.interface";
 import { Agent } from "../agent/agent.model";
+import { sendEmail } from "../../utils/sendEmail";
 
 
 const getNewAccessToken = async (refreshToken: string) => {
@@ -76,8 +78,9 @@ const setPassword = async (newPassword: string, decodedToken: JwtPayload) => {
 
 
 
-const forgotPassword = async (email: string) => {
-    const isUserExist = await User.findOne({ email });
+const forgotPassword = async (email: string, name: string) => {
+
+    const isUserExist = await User.findOne({ email })
 
     if (!isUserExist) {
         throw new AppError(StatusCodes.BAD_REQUEST, "User does not exist")
@@ -104,15 +107,15 @@ const forgotPassword = async (email: string) => {
 
     const resetUILink = `${envVars.FRONT_END_URL}/reset-password?id=${isUserExist._id}&token=${resetToken}`
 
-    // sendEmail({
-    //     to: isUserExist.email,
-    //     subject: "Password Reset",
-    //     templateName: "forgetPassword",
-    //     templateData: {
-    //         name: isUserExist.name,
-    //         resetUILink
-    //     }
-    // })
+    sendEmail({
+        to: isUserExist.email,
+        subject: "Password Reset",
+        templateName: "forgetPassword",
+        templateData: {
+            name: isUserExist.name,
+            resetUILink
+        }
+    })
 
   
 }

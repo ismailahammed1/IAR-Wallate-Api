@@ -1,27 +1,69 @@
-import crypto from 'crypto';
-import { redisClient } from '../../config/redis.config';
+import crypto from "crypto";
+import { redisClient } from "../../config/redis.config";
+import { sendEmail } from "../../utils/sendEmail";
+import { User } from "../user/user.model";
+import { AppError } from "../../errorHelpers/AppError";
 
-OTP-EXPERETION=2*60//2min experation
 
-const genaretOtp=async(langth=6)=>{
-    const Otp=crypto.randomInt(10**(langth-1), 10**langth).toString()
-    return Otp
-}
-const sendOtp=async(email:string, name:string)=>{
-    const otp=genaretOtp()
-    const redisKey=`otp:${email}`
-    await redisClient.set(redisKey,otp,Option{
-        expiration:{
-            type:'EX',
-            value:otp-EXPERETION
-        }
-    })
+const OTP_EXPIRATION = 2 * 60 // 2minute
+
+const generateOtp = (length = 6) => {
+    //6 digit otp
+    const otp = crypto.randomInt(10 ** (length - 1), 10 ** length).toString()
+
+    // 10 ** 5 => 10 * 10 *10 *10 *10 * 10 => 1000000
+
+    return otp
 }
 
-const verifyOtp=async()=>{
+const sendOTP = async (email: string, name: string) => {
+  const user = await User.findOne({ email });
 
+  if (!user) throw new AppError(404, "User not found");
+  // if (user.isVerified) throw new AppError(401, "You are already verified");
+
+  const otp = generateOtp();
+  const redisKey = `otp:${email}`;
+
+  await redisClient.set(redisKey, otp, { EX: OTP_EXPIRATION });
+
+  await sendEmail({
+    to: email,
+    subject: "Your OTP Code",
+    templateName: "otp",
+    templateData: { name, otp },
+  });
+
+};
+
+const verifyOTP = async (email: string, otp: string): Promise<boolean> => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+    const redisKey = `otp:${email}`
+
+    const savedOtp = await redisClient.get(redisKey)
+
+    if (!savedOtp) {
+        throw new AppError(401, "Invalid OTP");
+    }
+
+ if (!savedOtp || savedOtp !== otp) {
+  throw new AppError(401, "Invalid OTP");
 }
-export const otpServices={
-    sendOtp,
-    verifyOtp
+
+
+  await Promise.all([
+    User.updateOne({ email }, { isVerified: true }, { runValidators: true }),
+    redisClient.del(redisKey),
+  ]);
+
+  return true;
+};
+
+export const OTPService = {
+    sendOTP,
+    verifyOTP
 }

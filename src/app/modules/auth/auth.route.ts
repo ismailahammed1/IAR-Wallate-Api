@@ -18,10 +18,11 @@ router.post("/logout", AuthController.logout);
 
 
 router.post("/refresh-token", AuthController.getNewAccessToken);
-router.post("/reset-password", checkAuth(...Object.values(Role)), AuthController.resetPassword);
-router.post("/change-password", checkAuth(...Object.values(Role)), AuthController.changePassword);
-router.post("/set-password", checkAuth(...Object.values(Role)), AuthController.setPassword);
 
+router.post("/change-password", checkAuth(...Object.values(Role)), AuthController.changePassword)
+router.post("/set-password", checkAuth(...Object.values(Role)), AuthController.setPassword)
+router.post("/forgot-password", AuthController.forgotPassword)
+router.post("/reset-password", checkAuth(...Object.values(Role)), AuthController.resetPassword)
 
 // google authentication
 router.get("/google", async (req: Request, res: Response, next: NextFunction) => {

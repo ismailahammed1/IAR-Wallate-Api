@@ -4,16 +4,16 @@ import { sendResponse } from "../../utils/sendResponse";
 import { NextFunction, Request, Response,  } from "express";
 import { catchAsync } from "../../utils/catchAsync";
 import { JwtPayload } from "jsonwebtoken";
-import { transactionSevice } from "./transaction.service";
 import { AppError } from "../../errorHelpers/AppError";
 import { Role } from "../user/user.interface";
+import { transactionService } from "./transaction.service";
 
 const userAddMoney = catchAsync(async (req: Request, res: Response, next:NextFunction ) => {
   const loginUser = req.user as JwtPayload;
   const userId=loginUser.userId
   const { amount } = req.body;
 
-  const result = await transactionSevice.addMoneyByUser(userId, amount);
+  const result = await transactionService.addMoneyByUser(userId, amount);
 
   res.status(200).json({
     success: true,
@@ -33,7 +33,7 @@ const userWithdrawToAgent = catchAsync(async (req: Request, res: Response, next:
     throw new AppError(401, "User not authenticated");
   }
 
-  const result = await transactionSevice.userWithdrawToAgent(
+  const result = await transactionService.userWithdrawToAgent(
     userId,
     agentId,
     amount
@@ -51,7 +51,7 @@ const sendMoney = catchAsync(async (req: Request, res: Response, next:NextFuncti
   const decodedToken = req.user as JwtPayload;
   const userId = decodedToken.userId;
   const { receiverId, amount } = req.body;
-  const result = await transactionSevice.sendMoneyByUser(
+  const result = await transactionService.sendMoneyByUser(
     userId,
     receiverId,
     amount
@@ -74,7 +74,7 @@ export const agentCashIn = catchAsync(async (req: Request, res: Response, next:N
   const agentId = (req.user as JwtPayload).userId;
   const { userId, amount } = req.body;
 
-  const result = await transactionSevice.agentCashInToUser(agentId, userId, amount);
+  const result = await transactionService.agentCashInToUser(agentId, userId, amount);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -88,7 +88,7 @@ export const agentCashOut = catchAsync(async (req: Request, res: Response, next:
   const agentId = (req.user as JwtPayload).userId;
   const { userId, amount } = req.body;
 
-  const result = await transactionSevice.agentCashOutFromUser(agentId, userId, amount);
+  const result = await transactionService.agentCashOutFromUser(agentId, userId, amount);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -108,7 +108,7 @@ const getAgentTransactions = catchAsync(
       return next(new AppError(403, "Only admins can access agent transactions"));
     }
 
-    const transactions = await transactionSevice.getAgentTransactions();
+    const transactions = await transactionService.getAgentTransactions();
 
     res.status(200).json({
       success: true,
@@ -127,7 +127,7 @@ const getUserTransactions = catchAsync(
       return next(new AppError(403, "Only admins can access agent transactions"));
     }
 
-    const transactions = await transactionSevice.getUserTransactions();
+    const transactions = await transactionService.getUserTransactions();
 
     res.status(200).json({
       success: true,

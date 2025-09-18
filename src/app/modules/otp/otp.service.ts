@@ -3,6 +3,7 @@ import { redisClient } from "../../config/redis.config";
 import { sendEmail } from "../../utils/sendEmail";
 import { User } from "../user/user.model";
 import { AppError } from "../../errorHelpers/AppError";
+import { userStatus } from "../user/user.interface";
 
 
 const OTP_EXPIRATION = 2 * 60 // 2minute
@@ -42,26 +43,26 @@ const verifyOTP = async (email: string, otp: string): Promise<boolean> => {
   if (!user) {
     throw new AppError(404, "User not found");
   }
-    const redisKey = `otp:${email}`
 
-    const savedOtp = await redisClient.get(redisKey)
+  const redisKey = `otp:${email}`;
+  const savedOtp = await redisClient.get(redisKey);
+ 
 
-    if (!savedOtp) {
-        throw new AppError(401, "Invalid OTP");
-    }
-
- if (!savedOtp || savedOtp !== otp) {
+if (!savedOtp || savedOtp !== String(otp)) {
   throw new AppError(401, "Invalid OTP");
 }
 
+  // ✅ Automatically approve and verify user
+  user.isVerified = true;
+  user.approved = true;
+  user.userStatus = userStatus.APPROVED;
 
-  await Promise.all([
-    User.updateOne({ email }, { isVerified: true }, { runValidators: true }),
-    redisClient.del(redisKey),
-  ]);
+  await user.save();
+  await redisClient.del(redisKey);
 
   return true;
 };
+
 
 export const OTPService = {
     sendOTP,

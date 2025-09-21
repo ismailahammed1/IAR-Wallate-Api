@@ -11,7 +11,7 @@ import bcryptjs from "bcryptjs";
 import { User } from "../modules/user/user.model";
 import { Agent } from "../modules/agent/agent.model";
 import { envVars } from "./envVars";
-import { isActive, Role } from "../modules/user/user.interface";
+import { isActive, Role, userStatus } from "../modules/user/user.interface";
 
 function validateAccountStatus(user: any): string | null {
   if (!user.isVerified) return "User is not verified";
@@ -122,7 +122,9 @@ passport.use(
             name: profile.displayName,
             picture: profile.photos?.[0]?.value,
             role: Role.USER,
-            isVerified: true,
+             isVerified: true,
+                     approved: true,
+                     userStatus: userStatus.APPROVED,
             auths: [
               {
                 provider: "google",

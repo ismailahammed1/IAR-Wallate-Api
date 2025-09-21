@@ -25,13 +25,21 @@ router.post("/forgot-password", AuthController.forgotPassword)
 router.post("/reset-password", checkAuth(...Object.values(Role)), AuthController.resetPassword)
 
 // google authentication
-router.get("/google", async (req: Request, res: Response, next: NextFunction) => {
-    const redirect = req.query.redirect || "/"
-    passport.authenticate("google", { scope: ["profile", "email"], state: redirect as string })(req, res, next)
-})
-router.get("/google/callback", passport.authenticate("google", { 
-    failureRedirect: `${envVars.FRONT_END_URL}/login?error=Please contact with out support team!` }),
- AuthController.googleCallbackController)
+router.get("/google", async (req:Request, res:Response, next:NextFunction) => {
+  const redirect = req.query.redirect || "/";
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    state: redirect as string,
+  })(req, res, next);
+});
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: `${envVars.FRONT_END_URL}/login?error=Please contact our support team!`,
+  }),
+  AuthController.googleCallbackController
+);
 
 
 export const AuthRoutes = router;

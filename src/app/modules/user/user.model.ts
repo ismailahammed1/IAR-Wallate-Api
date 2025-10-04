@@ -1,5 +1,11 @@
 import { model, Schema } from "mongoose";
-import { IAuthProvider, isActive, Iuser, Role, userStatus } from "./user.interface";
+import {
+  IAuthProvider,
+  isActive,
+  Iuser,
+  Role,
+  userStatus,
+} from "./user.interface";
 
 const authProviderSchema = new Schema<IAuthProvider>(
   {
@@ -13,15 +19,14 @@ const authProviderSchema = new Schema<IAuthProvider>(
 );
 
 const userSchema = new Schema<Iuser>(
-  
   {
-    
     name: { type: String },
     email: { type: String, required: true, unique: true },
     password: { type: String },
     role: {
       type: String,
       enum: Object.values(Role),
+      required: true,
       default: Role.USER,
     },
     phone: { type: String },
@@ -43,7 +48,7 @@ const userSchema = new Schema<Iuser>(
       enum: Object.values(isActive),
       default: isActive.ACTIVE,
     },
-  
+
     wallet: {
       type: Schema.Types.ObjectId,
       ref: "Wallet",
@@ -58,8 +63,9 @@ const userSchema = new Schema<Iuser>(
     versionKey: false,
   }
 );
-userSchema.virtual('id').get(function() {
+userSchema.virtual("id").get(function () {
   return this._id.toString();
-})
+});
 
 export const User = model<Iuser>("User", userSchema);
+export const Agent = model<Iuser>("Agents", userSchema);

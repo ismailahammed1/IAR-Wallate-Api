@@ -1,12 +1,13 @@
+
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status-codes";
 import { JwtPayload } from "jsonwebtoken";
-import { User } from "../modules/user/user.model";
 import { verifyToken } from "../utils/jwt";
 import { AppError } from "../errorHelpers/AppError";
 import { envVars } from "../config/envVars";
 import { isActive } from "../modules/user/user.interface";
-import { Agent } from "../modules/agent/agent.model";
+import { Agent, User } from "../modules/user/user.model";
+
 
 export const checkAuth = (...authRoles: string[]) => async (req: Request, res: Response, next: NextFunction) => {
 
@@ -21,7 +22,8 @@ export const checkAuth = (...authRoles: string[]) => async (req: Request, res: R
         const verifiedToken = verifyToken(accessToken, envVars.jwt_secret) as JwtPayload
 
         const isUserExist = await User.findOne({ email: verifiedToken.email }) || await Agent.findOne({ email: verifiedToken.email })
-
+      
+        
         if (!isUserExist) {
             throw new AppError(httpStatus.BAD_REQUEST, "User does not exist")
         }

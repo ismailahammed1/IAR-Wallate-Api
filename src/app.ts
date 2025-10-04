@@ -15,8 +15,9 @@ const app = express();
 
 // Enable CORS with credentials
 app.use(cors({
-  origin: envVars.FRONT_END_URL, // e.g. http://localhost:3000
-  credentials: true,
+  // origin: envVars.FRONT_END_URL, 
+   origin: "http://localhost:5173", 
+  credentials: true,      
 }));
 
 //  Body parser and cookie parser

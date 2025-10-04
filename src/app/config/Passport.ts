@@ -8,8 +8,7 @@ import {
 import { Strategy as LocalStrategy } from "passport-local";
 import bcryptjs from "bcryptjs";
 
-import { User } from "../modules/user/user.model";
-import { Agent } from "../modules/agent/agent.model";
+import { Agent, User } from "../modules/user/user.model";
 import { envVars } from "./envVars";
 import { isActive, Role, userStatus } from "../modules/user/user.interface";
 

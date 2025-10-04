@@ -1,14 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-dynamic-delete */
 
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
 import { AppError } from "../../errorHelpers/AppError";
 import { IAuthProvider, Iuser, AuthProviderType, Role, } from "./user.interface";
-import { User } from "./user.model";
+
 import bcryptjs from 'bcryptjs'
 import { StatusCodes } from "http-status-codes";
-import { Agent } from "../agent/agent.model";
-import { IAgent } from "../agent/agent.interface";
+import { Agent, User } from "./user.model";
+
 
 const createUser = async (payload: Partial<Iuser>) => {
   const { name, email, password, role = Role.USER, ...rest } = payload;
@@ -29,29 +30,53 @@ const createUser = async (payload: Partial<Iuser>) => {
     providerID: email,
   };
 
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    role, 
-    auths: [authProvider],
-    ...rest,
-  });
+  let newUser;
 
-  return user;
+  if (role === Role.USER) {
+    newUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      auths: [authProvider],
+      ...rest,
+    });
+  } else if (role === Role.AGENT) {
+    newUser = await Agent.create({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      auths: [authProvider],
+      ...rest,
+    });
+  } else {
+    throw new AppError(400, `Invalid role: ${role}`);
+  }
+  return newUser;
 };
 
 
-const getAllUser = async (page = 1, limit = 1) => {
+const getAllUser = async (page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
 
-  const [users, total] = await Promise.all([
-    User.find({}).skip(skip).limit(limit),
+    const filter = { role: { $ne: Role.SUPER_ADMIN } };
+
+  const [users, totalUsers] = await Promise.all([
+    User.find(filter).skip(skip).limit(limit).select("-password"),
     User.countDocuments({}),
   ]);
 
+  const [agents, totalAgents] = await Promise.all([
+    Agent.find({}).skip(skip).limit(limit).select("-password"),
+    Agent.countDocuments({}),
+  ]);
+
+  const allUsers = [...users, ...agents];
+  const total = totalUsers + totalAgents;
+
   return {
-    data: users,
+    data: allUsers,
     meta: {
       page,
       limit,
@@ -61,14 +86,17 @@ const getAllUser = async (page = 1, limit = 1) => {
   };
 };
 
+
 const getSingleUser = async (id: string) => {
-    const user = await User.findById(id).select("-password");
+  
+    const user = await User.findById(id).select("-password") ||  await Agent.findById(id).select("-password");
+  
     return {
         data: user
     }
 };
 const getMe = async (userId: string) => {
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(userId).select("-password") ||  await Agent.findById(userId).select("-password");
     return {
         data: user
     }
@@ -78,7 +106,7 @@ const getMe = async (userId: string) => {
 
 const userUpdated = async (
   userId: string,
-  payload: Partial<Iuser & IAgent>,
+  payload: Partial<Iuser>,
   decodedToken: JwtPayload
 ) => {
   // Use Set for faster & .includes()-free lookup
@@ -109,7 +137,7 @@ const userUpdated = async (
     throw new AppError(StatusCodes.UNAUTHORIZED, "You are not authorized to update SUPER_ADMIN");
   }
 
-  //  allowed fields (for USER / AGENT)
+  //  allowed fields (for USER / .AGENT)
   if (decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) {
     Object.keys(payload).forEach((key) => {
       if (!allowedSelfUpdateFieldsSet.has(key)) {
@@ -129,13 +157,16 @@ const userUpdated = async (
     }
   }
 
-  // Decide which model to update
-  const isUser = ifUserExist instanceof User;
-  const newUpdatedUser = isUser
+ try {
+  const newUpdatedUser = User
     ? await User.findByIdAndUpdate(userId, payload, { new: true, runValidators: true })
     : await Agent.findByIdAndUpdate(userId, payload, { new: true, runValidators: true });
 
   return newUpdatedUser;
+} catch (err) {
+   throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, "Update failed. See logs.");
+}
+
 };
 
     

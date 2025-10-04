@@ -3,13 +3,12 @@
 import { AppError } from "../../errorHelpers/AppError";
 import { createNewAccessTokenWithRefreshToken } from "../../utils/userToken";
 
-import { User } from "../user/user.model";
+import { Agent, User } from "../user/user.model";
 import bcryptjs from 'bcryptjs'
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
 import { StatusCodes } from "http-status-codes";
 import { isActive, Role, userStatus } from "../user/user.interface";
-import { Agent } from "../agent/agent.model";
 import { sendEmail } from "../../utils/sendEmail";
 
 

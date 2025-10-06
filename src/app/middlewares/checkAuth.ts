@@ -13,15 +13,11 @@ export const checkAuth =
   (...authRoles: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-<<<<<<< HEAD
-        const accessToken = req.headers.authorization || req.cookies.accessToken;
-=======
       const accessToken = req.headers.authorization || req.cookies?.accessToken;
      
       if (!accessToken) {
         throw new AppError(403, "No Token Recieved");
       }
->>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
 
       const verifiedToken = verifyToken(
         accessToken,
@@ -34,29 +30,6 @@ export const checkAuth =
         (await User.findOne({ email: verifiedToken.email })) ||
         (await Agent.findOne({ email: verifiedToken.email }));
 
-<<<<<<< HEAD
-        const isUserExist = await User.findOne({ email: verifiedToken.email }) || await Agent.findOne({ email: verifiedToken.email })
-      
-        
-        if (!isUserExist) {
-            throw new AppError(httpStatus.BAD_REQUEST, "User does not exist")
-        }
-        if (!isUserExist.isVerified) {
-            throw new AppError(httpStatus.BAD_REQUEST, "User is not verified")
-        }
-        if (isUserExist.isActive === isActive.BLOCKED || isUserExist.isActive === isActive.INACTIVE) {
-            throw new AppError(httpStatus.BAD_REQUEST, `User is ${isUserExist.isActive}`)
-        }
-        if (isUserExist.isDeleted) {
-            throw new AppError(httpStatus.BAD_REQUEST, "User is deleted")
-        }
-
-        if (!authRoles.includes(verifiedToken.role)) {
-            throw new AppError(403, "You are not permitted to view this route!!!")
-        }
-        req.user = verifiedToken
-        next()
-=======
       if (!isUserExist) {
         throw new AppError(httpStatus.BAD_REQUEST, "User does not exist");
       }
@@ -75,7 +48,6 @@ export const checkAuth =
       if (isUserExist.isDeleted) {
         throw new AppError(httpStatus.BAD_REQUEST, "User is deleted");
       }
->>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
 
       if (!authRoles.includes(verifiedToken.role)) {
         throw new AppError(403, "You are not permitted to view this route!!!");

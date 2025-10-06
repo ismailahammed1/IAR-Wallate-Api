@@ -4,15 +4,8 @@
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
 import { AppError } from "../../errorHelpers/AppError";
-<<<<<<< HEAD
-import { IAuthProvider, Iuser, AuthProviderType, Role, } from "./user.interface";
-
-import bcryptjs from 'bcryptjs'
-=======
 import { IAuthProvider, Iuser, AuthProviderType, Role } from "./user.interface";
-import { User } from "./user.model";
 import bcryptjs from "bcryptjs";
->>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
 import { StatusCodes } from "http-status-codes";
 import { Agent, User } from "./user.model";
 
@@ -40,9 +33,6 @@ const createUser = async (payload: Partial<Iuser>) => {
     providerID: email,
   };
 
-<<<<<<< HEAD
-  let newUser;
-=======
   const user = await User.create({
     name,
     email,
@@ -51,8 +41,7 @@ const createUser = async (payload: Partial<Iuser>) => {
     auths: [authProvider],
     ...rest,
   });
->>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
-
+  let newUser; 
   if (role === Role.USER) {
     newUser = await User.create({
       name,
@@ -77,12 +66,7 @@ const createUser = async (payload: Partial<Iuser>) => {
   return newUser;
 };
 
-<<<<<<< HEAD
-
-const getAllUser = async (page = 1, limit = 10) => {
-=======
 const getAllUser = async (page = 1, limit = 1) => {
->>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
   const skip = (page - 1) * limit;
 
     const filter = { role: { $ne: Role.SUPER_ADMIN } };
@@ -113,20 +97,6 @@ const getAllUser = async (page = 1, limit = 1) => {
 
 
 const getSingleUser = async (id: string) => {
-<<<<<<< HEAD
-  
-    const user = await User.findById(id).select("-password") ||  await Agent.findById(id).select("-password");
-  
-    return {
-        data: user
-    }
-};
-const getMe = async (userId: string) => {
-    const user = await User.findById(userId).select("-password") ||  await Agent.findById(userId).select("-password");
-    return {
-        data: user
-    }
-=======
   const user = await User.findById(id).select("-password");
   return {
     data: user,
@@ -143,7 +113,6 @@ const getMe = async (userId: string) => {
   return {
     data: user,
   };
->>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
 };
 
 const userUpdated = async (
@@ -151,92 +120,80 @@ const userUpdated = async (
   payload: Partial<Iuser>,
   decodedToken: JwtPayload
 ) => {
-  // Use Set for faster & .includes()-free lookup
-  const allowedSelfUpdateFieldsSet = new Set([
-    "name",
-    "password",
-    "picture",
-    "phone",
-    "address",
-    "nationalId",
-    "profileImage",
-    "dateOfBirth",
-  ]);
+  try {
+    const allowedSelfUpdateFieldsSet = new Set([
+      "name",
+      "password",
+      "picture",
+      "phone",
+      "address",
+      "nationalId",
+      "profileImage",
+      "dateOfBirth",
+    ]);
 
-  const ifUserExist =
-    (await User.findById(userId)) || (await Agent.findById(userId));
+    const ifUserExist =
+      (await User.findById(userId)) || (await Agent.findById(userId));
 
-  if (!ifUserExist) {
-    throw new AppError(StatusCodes.NOT_FOUND, "User not found");
-  }
+    if (!ifUserExist) {
+      throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+    }
 
-  // Self-update restriction
-  if (
-    (decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) &&
-    userId !== decodedToken.userId
-  ) {
-    throw new AppError(StatusCodes.UNAUTHORIZED, "You are not authorized");
-  }
-
-  // Admin cannot update SUPER_ADMIN
-  if (
-    decodedToken.role === Role.ADMIN &&
-    ifUserExist.role === Role.SUPER_ADMIN
-  ) {
-    throw new AppError(
-      StatusCodes.UNAUTHORIZED,
-      "You are not authorized to update SUPER_ADMIN"
-    );
-  }
-
-  //  allowed fields (for USER / .AGENT)
-  if (decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) {
-    Object.keys(payload).forEach((key) => {
-      if (!allowedSelfUpdateFieldsSet.has(key)) {
-        delete payload[key as keyof typeof payload];
-      }
-    });
-
-    // Restricted fields for user and agent
     if (
-      "role" in payload ||
-      "email" in payload ||
-      "isActive" in payload ||
-      "isDeleted" in payload ||
-      "isVerified" in payload
+      (decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) &&
+      userId !== decodedToken.userId
+    ) {
+      throw new AppError(StatusCodes.UNAUTHORIZED, "You are not authorized");
+    }
+
+    if (
+      decodedToken.role === Role.ADMIN &&
+      ifUserExist.role === Role.SUPER_ADMIN
     ) {
       throw new AppError(
-        StatusCodes.FORBIDDEN,
-        "You are not authorized to update these fields"
+        StatusCodes.UNAUTHORIZED,
+        "You are not authorized to update SUPER_ADMIN"
       );
     }
-  }
 
-<<<<<<< HEAD
- try {
-  const newUpdatedUser = User
-    ? await User.findByIdAndUpdate(userId, payload, { new: true, runValidators: true })
-    : await Agent.findByIdAndUpdate(userId, payload, { new: true, runValidators: true });
-=======
-  // Decide which model to update
-  const isUser = ifUserExist instanceof User;
-  const newUpdatedUser = isUser
-    ? await User.findByIdAndUpdate(userId, payload, {
-        new: true,
-        runValidators: true,
-      })
-    : await Agent.findByIdAndUpdate(userId, payload, {
-        new: true,
-        runValidators: true,
+    if (decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) {
+      Object.keys(payload).forEach((key) => {
+        if (!allowedSelfUpdateFieldsSet.has(key)) {
+          delete payload[key as keyof typeof payload];
+        }
       });
->>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
 
-  return newUpdatedUser;
-} catch (err) {
-   throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, "Update failed. See logs.");
-}
+      if (
+        "role" in payload ||
+        "email" in payload ||
+        "isActive" in payload ||
+        "isDeleted" in payload ||
+        "isVerified" in payload
+      ) {
+        throw new AppError(
+          StatusCodes.FORBIDDEN,
+          "You are not authorized to update these fields"
+        );
+      }
+    }
 
+    const isUser = ifUserExist instanceof User;
+    const newUpdatedUser = isUser
+      ? await User.findByIdAndUpdate(userId, payload, {
+          new: true,
+          runValidators: true,
+        })
+      : await Agent.findByIdAndUpdate(userId, payload, {
+          new: true,
+          runValidators: true,
+        });
+
+    return newUpdatedUser;
+  } catch (err) {
+    throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, "Update failed. See logs.");
+  }
 };
+
 
 export const UserServices = {
   createUser,

@@ -4,9 +4,15 @@
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
 import { AppError } from "../../errorHelpers/AppError";
+<<<<<<< HEAD
 import { IAuthProvider, Iuser, AuthProviderType, Role, } from "./user.interface";
 
 import bcryptjs from 'bcryptjs'
+=======
+import { IAuthProvider, Iuser, AuthProviderType, Role } from "./user.interface";
+import { User } from "./user.model";
+import bcryptjs from "bcryptjs";
+>>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
 import { StatusCodes } from "http-status-codes";
 import { Agent, User } from "./user.model";
 
@@ -18,19 +24,34 @@ const createUser = async (payload: Partial<Iuser>) => {
     throw new AppError(400, "Email and password are required");
   }
 
-   const isUserExist = await User.findOne({ email }) || await Agent.findOne({email});
-    if (isUserExist) {
-      throw new AppError(409, "User with this email already exists ");
-    }
+  const isUserExist =
+    (await User.findOne({ email })) || (await Agent.findOne({ email }));
+  if (isUserExist) {
+    throw new AppError(409, "User with this email already exists ");
+  }
 
-  const hashedPassword = await bcryptjs.hash(password as string, Number(envVars.BCRYPT_SALT_ROUND));
+  const hashedPassword = await bcryptjs.hash(
+    password as string,
+    Number(envVars.BCRYPT_SALT_ROUND)
+  );
 
   const authProvider: IAuthProvider = {
     provider: AuthProviderType.CREDENTIAL,
     providerID: email,
   };
 
+<<<<<<< HEAD
   let newUser;
+=======
+  const user = await User.create({
+    name,
+    email,
+    password: hashedPassword,
+    role,
+    auths: [authProvider],
+    ...rest,
+  });
+>>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
 
   if (role === Role.USER) {
     newUser = await User.create({
@@ -56,8 +77,12 @@ const createUser = async (payload: Partial<Iuser>) => {
   return newUser;
 };
 
+<<<<<<< HEAD
 
 const getAllUser = async (page = 1, limit = 10) => {
+=======
+const getAllUser = async (page = 1, limit = 1) => {
+>>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
   const skip = (page - 1) * limit;
 
     const filter = { role: { $ne: Role.SUPER_ADMIN } };
@@ -88,6 +113,7 @@ const getAllUser = async (page = 1, limit = 10) => {
 
 
 const getSingleUser = async (id: string) => {
+<<<<<<< HEAD
   
     const user = await User.findById(id).select("-password") ||  await Agent.findById(id).select("-password");
   
@@ -100,9 +126,25 @@ const getMe = async (userId: string) => {
     return {
         data: user
     }
+=======
+  const user = await User.findById(id).select("-password");
+  return {
+    data: user,
+  };
 };
+const getMe = async (userId: string) => {
+  const user =
+    (await User.findById(userId).select("-password")) ||
+    (await Agent.findById(userId).select("-password"));
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
 
-
+  return {
+    data: user,
+  };
+>>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
+};
 
 const userUpdated = async (
   userId: string,
@@ -121,20 +163,30 @@ const userUpdated = async (
     "dateOfBirth",
   ]);
 
-  const ifUserExist = await User.findById(userId) || await Agent.findById(userId);
+  const ifUserExist =
+    (await User.findById(userId)) || (await Agent.findById(userId));
 
   if (!ifUserExist) {
     throw new AppError(StatusCodes.NOT_FOUND, "User not found");
   }
 
   // Self-update restriction
-  if ((decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) && userId !== decodedToken.userId) {
+  if (
+    (decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) &&
+    userId !== decodedToken.userId
+  ) {
     throw new AppError(StatusCodes.UNAUTHORIZED, "You are not authorized");
   }
 
   // Admin cannot update SUPER_ADMIN
-  if (decodedToken.role === Role.ADMIN && ifUserExist.role === Role.SUPER_ADMIN) {
-    throw new AppError(StatusCodes.UNAUTHORIZED, "You are not authorized to update SUPER_ADMIN");
+  if (
+    decodedToken.role === Role.ADMIN &&
+    ifUserExist.role === Role.SUPER_ADMIN
+  ) {
+    throw new AppError(
+      StatusCodes.UNAUTHORIZED,
+      "You are not authorized to update SUPER_ADMIN"
+    );
   }
 
   //  allowed fields (for USER / .AGENT)
@@ -145,22 +197,39 @@ const userUpdated = async (
       }
     });
 
-    // Restricted fields for user and agent 
+    // Restricted fields for user and agent
     if (
-      'role' in payload ||
-      'email' in payload ||
-      'isActive' in payload ||
-      'isDeleted' in payload ||
-      'isVerified' in payload
+      "role" in payload ||
+      "email" in payload ||
+      "isActive" in payload ||
+      "isDeleted" in payload ||
+      "isVerified" in payload
     ) {
-      throw new AppError(StatusCodes.FORBIDDEN, "You are not authorized to update these fields");
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        "You are not authorized to update these fields"
+      );
     }
   }
 
+<<<<<<< HEAD
  try {
   const newUpdatedUser = User
     ? await User.findByIdAndUpdate(userId, payload, { new: true, runValidators: true })
     : await Agent.findByIdAndUpdate(userId, payload, { new: true, runValidators: true });
+=======
+  // Decide which model to update
+  const isUser = ifUserExist instanceof User;
+  const newUpdatedUser = isUser
+    ? await User.findByIdAndUpdate(userId, payload, {
+        new: true,
+        runValidators: true,
+      })
+    : await Agent.findByIdAndUpdate(userId, payload, {
+        new: true,
+        runValidators: true,
+      });
+>>>>>>> c8bf1ecb9da49473b39466742f5f741c6cd93449
 
   return newUpdatedUser;
 } catch (err) {
@@ -169,14 +238,10 @@ const userUpdated = async (
 
 };
 
-    
-  
-
-
 export const UserServices = {
   createUser,
   getAllUser,
   userUpdated,
-getMe,
-getSingleUser
+  getMe,
+  getSingleUser,
 };

@@ -14,8 +14,8 @@ router.post(
 );
 router.get("/all-users", checkAuth(Role.ADMIN,Role.SUPER_ADMIN), userContoller.getAllUser);
 router.patch(
-  "/:id",
-  checkAuth(...Object.values(Role)),
+  "/update",
+  checkAuth(Role.ADMIN,Role.AGENT, Role.USER),
   userContoller.newUpdatedUser
 );
 router.get("/me", checkAuth(...Object.values(Role)), userContoller.getMe)

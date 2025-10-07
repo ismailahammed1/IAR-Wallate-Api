@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose from "mongoose";
 import { StatusCodes } from "http-status-codes";
 
 import { WalletModel } from "../wallet/wallet.model";
 import { TransactionModel } from "./transaction.model";
-import { User } from "../user/user.model";
-import { Agent } from "../agent/agent.model";
+import { Agent, User } from "../user/user.model";
+
 
 import { AccountStatus } from "../wallet/wallet.interface";
 import { TransactionStatus, TransactionType } from "./transaction.interface";
@@ -127,6 +128,7 @@ const userWithdrawToAgent = async (userId: string, agentId: string, amount: numb
 
 //  User to User Transfer
 const sendMoneyByUser = async (senderId: string, receiverId: string, amount: number) => {
+  amount = Number(amount);
   if (!senderId || !receiverId || !amount || amount <= 0) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Sender, receiver, and valid amount are required");
   }
@@ -153,8 +155,11 @@ const sendMoneyByUser = async (senderId: string, receiverId: string, amount: num
     if (senderWallet.status === AccountStatus.BLOCKED) throw new AppError(StatusCodes.FORBIDDEN, "Sender wallet is blocked");
     if (senderWallet.balance < amount) throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient balance");
 
+
+
     senderWallet.balance -= amount;
     receiverWallet.balance += amount;
+
 
     await senderWallet.save({ session });
     await receiverWallet.save({ session });
@@ -316,7 +321,7 @@ const getUserTransactions = async () => {
 //  Get All Agent Transactions
 const getAgentTransactions = async () => {
   const agents = await Agent.find({ role: Role.AGENT }, "_id");
-  const agentIds = agents.map(agent => agent._id);
+  const agentIds = agents.map((agent: { _id: any; }) => agent._id);
 
   const transactions = await TransactionModel.find({
     initiatedByAgent: { $in: agentIds }

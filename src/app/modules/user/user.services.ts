@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-dynamic-delete */
 
@@ -33,14 +34,7 @@ const createUser = async (payload: Partial<Iuser>) => {
     providerID: email,
   };
 
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    role,
-    auths: [authProvider],
-    ...rest,
-  });
+  
   let newUser; 
   if (role === Role.USER) {
     newUser = await User.create({
@@ -194,6 +188,31 @@ const userUpdated = async (
   }
 };
 
+const searchUsers = async (
+  name: string,
+  roles: string[],
+  excludeUserId?: string
+): Promise<Partial<Iuser>[]> => {
+  const regex = { $regex: name, $options: "i" };
+  
+  const userQuery: any = { name: regex };
+  const agentQuery: any = { name: regex };
+
+  if (excludeUserId) {
+    userQuery._id = { $ne: excludeUserId };
+    agentQuery._id = { $ne: excludeUserId };
+  }
+
+  const [users, agents] = await Promise.all([
+    roles.includes(Role.USER) ? User.find(userQuery).select("_id name email role") : [],
+    roles.includes(Role.AGENT) ? Agent.find(agentQuery).select("_id name email role") : [],
+  ]);
+
+  return [...users, ...agents];
+};
+
+
+
 
 export const UserServices = {
   createUser,
@@ -201,4 +220,5 @@ export const UserServices = {
   userUpdated,
   getMe,
   getSingleUser,
+  searchUsers
 };

@@ -10,6 +10,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import { JwtPayload } from "jsonwebtoken";
 import { WalletModel } from "../wallet/wallet.model";
 import { AccountStatus } from "../wallet/wallet.interface";
+import { Iuser, Role } from "./user.interface";
 
 
 
@@ -107,6 +108,46 @@ const newUpdatedUser = catchAsync(
   }
 );
 
+const searchUsers = catchAsync(async (req: Request, res: Response) => {
+  const name = req.query.name?.toString() || "";
+  const requestedRoles = req.query.roles?.toString().split(",") || [];
+
+const currentUser = req.user as Iuser;
+  
+
+  let rolesToSearch: string[] = [];
+
+
+if (!currentUser) {
+  return res.status(401).json({ message: "Unauthorized" });
+}
+const userId = currentUser._id?.toString();
+
+switch (currentUser.role) {
+  case Role.ADMIN:
+  case Role.SUPER_ADMIN:
+    rolesToSearch = requestedRoles.length ? requestedRoles : [Role.USER, Role.AGENT];
+    break;
+  case Role.AGENT:
+    rolesToSearch = [Role.USER, Role.AGENT];
+    break;
+  case Role.USER:
+  default:
+   rolesToSearch = [Role.USER, Role.AGENT];
+    break;
+}
+
+  const users = await UserServices.searchUsers(name, rolesToSearch, userId);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Users fetched successfully",
+    data: users,
+  });
+});
+
+
 
 export default {
   userRegister,
@@ -114,6 +155,6 @@ export default {
   newUpdatedUser,
   getMe,
   getSingleUser,
-
+searchUsers
 
 };

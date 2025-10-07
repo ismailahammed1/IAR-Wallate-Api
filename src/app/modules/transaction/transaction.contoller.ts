@@ -56,9 +56,6 @@ const sendMoney = catchAsync(async (req: Request, res: Response, next:NextFuncti
     receiverId,
     amount
   );
-
-  
-
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,

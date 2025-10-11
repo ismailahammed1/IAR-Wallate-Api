@@ -2,6 +2,7 @@ import { Schema, model } from "mongoose";
 import { AccountStatus, IWallet } from "./wallet.interface";
 
 
+
 const WalletSchema = new Schema<IWallet>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },

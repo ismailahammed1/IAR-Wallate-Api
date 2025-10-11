@@ -41,14 +41,12 @@ const userSchema = new Schema<Iuser>(
       enum: Object.values(userStatus),
       default: userStatus.PENDING,
     },
-
     isDeleted: { type: Boolean, default: false },
     isActive: {
       type: String,
       enum: Object.values(isActive),
       default: isActive.ACTIVE,
     },
-
     wallet: {
       type: Schema.Types.ObjectId,
       ref: "Wallet",
@@ -68,4 +66,4 @@ userSchema.virtual("id").get(function () {
 });
 
 export const User = model<Iuser>("User", userSchema);
-export const Agent = model<Iuser>("Agents", userSchema);
+export const Agent = model<Iuser>("Agent", userSchema); 

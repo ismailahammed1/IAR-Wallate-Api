@@ -35,18 +35,23 @@ const getMyWallet = catchAsync(async (req: Request, res: Response, next: NextFun
   }
 });
 
-const getMyTransactions = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const user = req.user as JwtPayload;
-  const userId = user.userId;
+ const getMyTransactions = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as { userId: string };
+    const { limit = 10, page = 1 } = req.query;
 
-  const transactions = await walletService.getMyTransactions(userId);
+    const result = await walletService.getMyTransactions(user.userId, {
+      limit: Number(limit),
+      page: Number(page),
+    });
 
-  res.status(200).json({
-    success: true,
-    message: "Transaction history fetched successfully",
-    data: transactions,
-  });
-});
+    res.status(200).json({
+      success: true,
+      message: "Transaction history fetched successfully",
+      data: result,
+    });
+  }
+);
 
 
 const blockWallet = catchAsync(async (req: Request, res: Response, next: NextFunction) => {

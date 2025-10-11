@@ -14,6 +14,7 @@ import { Role } from "../user/user.interface";
 
 //  Add Money by Approved User
 const addMoneyByUser = async (userId: string, amount: number) => {
+   amount = Number(amount);
   if (!userId || !amount || amount <= 0) {
     throw new AppError(StatusCodes.BAD_REQUEST, "User ID and valid amount are required");
   }
@@ -63,6 +64,7 @@ const addMoneyByUser = async (userId: string, amount: number) => {
 
 //  Withdraw from User to Agent
 const userWithdrawToAgent = async (userId: string, agentId: string, amount: number) => {
+ amount = Number(amount);
   if (!userId || !agentId || !amount || amount <= 0) {
     throw new AppError(StatusCodes.BAD_REQUEST, "User ID, Agent ID, and valid amount are required");
   }
@@ -195,6 +197,7 @@ const sendMoneyByUser = async (senderId: string, receiverId: string, amount: num
 
 //  Agent Cash In to User
 const agentCashInToUser = async (agentId: string, userId: string, amount: number) => {
+ amount = Number(amount);
   if (!agentId || !userId || !amount || amount <= 0) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Agent ID, User ID, and valid amount are required");
   }
@@ -251,6 +254,7 @@ const agentCashInToUser = async (agentId: string, userId: string, amount: number
 
 //  Agent Cash Out from User
 const agentCashOutFromUser = async (agentId: string, userId: string, amount: number) => {
+  amount = Number(amount);
   if (!agentId || !userId || !amount || amount <= 0) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Agent ID, User ID, and valid amount are required");
   }

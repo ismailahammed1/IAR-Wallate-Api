@@ -22,26 +22,39 @@ try {
 }
 };
 
+ const getMyTransactions = async (
+  userId: string,
+  { limit = 10, page = 1 }: { limit: number; page: number }
+) => {
+  const skip = (page - 1) * limit;
 
-const getMyTransactions  =async (userId: string) => {
-  try {
-    const transactions = await TransactionModel.find({
-      $or: [
-        { fromUser: userId },
-        { toUser: userId },
-        { initiatedByUser: userId }
-      ]
-    })
-    .sort({ createdAt: -1 })
-    .populate("fromUser", "name email role")
-    .populate("toUser", "name email role")
-    .populate("initiatedByUser", "name email role");
+  const filter = {
+    $or: [
+      { fromUser: userId },
+      { toUser: userId },
+      { initiatedByUser: userId },
+    ],
+  };
 
-    return transactions;
-  } catch (error) {
-    throw error;
-  }
+  const [transactions, total] = await Promise.all([
+    TransactionModel.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("fromUser", "name email role")
+      .populate("toUser", "name email role")
+      .populate("initiatedByUser", "name email role"),
+    TransactionModel.countDocuments(filter),
+  ]);
+
+  return {
+    transactions,
+    total,
+    page,
+    limit,
+  };
 };
+
 
 const blockWallet = async (walletId: string) => {
 try {

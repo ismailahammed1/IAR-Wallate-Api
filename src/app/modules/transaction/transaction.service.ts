@@ -4,7 +4,7 @@ import { StatusCodes } from "http-status-codes";
 
 import { WalletModel } from "../wallet/wallet.model";
 import { TransactionModel } from "./transaction.model";
-import { Agent, User } from "../user/user.model";
+import {  User } from "../user/user.model";
 
 
 import { AccountStatus } from "../wallet/wallet.interface";
@@ -74,7 +74,7 @@ const userWithdrawToAgent = async (userId: string, agentId: string, amount: numb
 
   try {
     const user = await User.findById(userId).session(session);
-    const agent = await Agent.findById(agentId).session(session);
+    const agent = await User.findById(agentId).session(session);
 
     if (!user || user.role !== Role.USER) {
       throw new AppError(StatusCodes.FORBIDDEN, "Invalid user or not authorized");
@@ -206,7 +206,7 @@ const agentCashInToUser = async (agentId: string, userId: string, amount: number
   session.startTransaction();
 
   try {
-    const agent = await Agent.findById(agentId).session(session);
+    const agent = await User.findById(agentId).session(session);
     const user = await User.findById(userId).session(session);
 
     if (!agent || agent.role !== Role.AGENT) {
@@ -263,7 +263,7 @@ const agentCashOutFromUser = async (agentId: string, userId: string, amount: num
   session.startTransaction();
 
   try {
-    const agent = await Agent.findById(agentId).session(session);
+    const agent = await User.findById(agentId).session(session);
     const user = await User.findById(userId).session(session);
 
     if (!agent || agent.role !== Role.AGENT) {
@@ -324,7 +324,7 @@ const getUserTransactions = async () => {
 
 //  Get All Agent Transactions
 const getAgentTransactions = async () => {
-  const agents = await Agent.find({ role: Role.AGENT }, "_id");
+  const agents = await User.find({ role: Role.AGENT }, "_id");
   const agentIds = agents.map((agent: { _id: any; }) => agent._id);
 
   const transactions = await TransactionModel.find({

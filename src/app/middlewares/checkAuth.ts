@@ -6,7 +6,7 @@ import { verifyToken } from "../utils/jwt";
 import { AppError } from "../errorHelpers/AppError";
 import { envVars } from "../config/envVars";
 import { isActive } from "../modules/user/user.interface";
-import { Agent, User } from "../modules/user/user.model";
+import { User } from "../modules/user/user.model";
 
 
 export const checkAuth =
@@ -27,8 +27,7 @@ export const checkAuth =
       
 
       const isUserExist =
-        (await User.findOne({ email: verifiedToken.email })) ||
-        (await Agent.findOne({ email: verifiedToken.email }));
+        await User.findOne({ email: verifiedToken.email })
 
       if (!isUserExist) {
         throw new AppError(httpStatus.BAD_REQUEST, "User does not exist");

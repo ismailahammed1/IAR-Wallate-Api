@@ -17,9 +17,11 @@ const createUser = async (payload: Partial<Iuser>) => {
   if (!email || !password) {
     throw new AppError(400, "Email and password are required");
   }
+    const normalizedEmail = email.toLowerCase();
+
 
   const isUserExist =
-    (await User.findOne({ email })) || (await Agent.findOne({ email }));
+    await User.findOne({ email })
   if (isUserExist) {
     throw new AppError(409, "User with this email already exists ");
   }
@@ -33,30 +35,20 @@ const createUser = async (payload: Partial<Iuser>) => {
     provider: AuthProviderType.CREDENTIAL,
     providerID: email,
   };
-
-  
-  let newUser; 
-  if (role === Role.USER) {
-    newUser = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      auths: [authProvider],
-      ...rest,
-    });
-  } else if (role === Role.AGENT) {
-    newUser = await Agent.create({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      auths: [authProvider],
-      ...rest,
-    });
-  } else {
+if (![Role.USER, Role.AGENT].includes(role)) {
     throw new AppError(400, `Invalid role: ${role}`);
   }
+
+  // Create user/agent
+  const newUser = await User.create({
+    name,
+    email: normalizedEmail,
+    password: hashedPassword,
+    role,
+    auths: [authProvider],
+    ...rest,
+  });
+
   return newUser;
 };
 

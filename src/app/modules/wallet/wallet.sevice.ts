@@ -22,7 +22,11 @@ try {
 }
 };
 
- const getMyTransactions = async (
+
+
+
+
+export const getMyTransactions = async (
   userId: string,
   { limit = 10, page = 1 }: { limit: number; page: number }
 ) => {

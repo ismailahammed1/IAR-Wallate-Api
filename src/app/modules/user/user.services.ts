@@ -5,10 +5,11 @@
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
 import { AppError } from "../../errorHelpers/AppError";
-import { IAuthProvider, Iuser, AuthProviderType, Role, userStatus, isActive } from "./user.interface";
+import { IAuthProvider, Iuser, AuthProviderType, Role, userStatus, isActive, UserQueryParams } from "./user.interface";
 import bcryptjs from "bcryptjs";
 import { StatusCodes } from "http-status-codes";
 import { Agent, User } from "./user.model";
+import { TransactionModel } from "../transaction/transaction.model";
 
 
 const createUser = async (payload: Partial<Iuser>) => {
@@ -52,31 +53,22 @@ if (![Role.USER, Role.AGENT].includes(role)) {
   return newUser;
 };
 
-const getAllUser =  async (page = 1, limit = 10) => {
-  const skip = (page - 1) * limit;
+const getAllUser = async () => {
+  const totalUsers = await User.countDocuments({ role: Role.USER });
+  const totalAgents = await User.countDocuments({ role: Role.AGENT });
+  const transactionCount = await TransactionModel.countDocuments();
 
-  // Include AGENT and USER roles, exclude SUPER_ADMIN
-  const filter = {
-    role: { $in: [Role.USER, Role.AGENT] },
-  };
+  const totalVolumeAgg = await TransactionModel.aggregate([
+    { $group: { _id: null, totalVolume: { $sum: "$amount" } } },
+  ]);
 
-  // Fetch users with pagination, exclude passwords
-  const users = await User.find(filter)
-    .skip(skip)
-    .limit(limit)
-    .select("-password");
-
-  // Count total matching users
-  const total = await User.countDocuments(filter);
+  const transactionVolume = totalVolumeAgg[0]?.totalVolume || 0;
 
   return {
-    data: users,
-    meta: {
-      page,
-      limit,
-      total,
-      totalPage: Math.ceil(total / limit),
-    },
+    totalUsers,
+    totalAgents,
+    transactionCount,
+    transactionVolume,
   };
 };
 
@@ -187,28 +179,29 @@ const userUpdated = async (
 };
 
 const searchUsers = async (
-  name: string,
+  keyword: string,
   roles: string[],
   excludeUserId?: string
 ): Promise<Partial<Iuser>[]> => {
-  const regex = { $regex: name, $options: "i" };
-  
-  const userQuery: any = { name: regex };
-  const agentQuery: any = { name: regex };
+  const regex = { $regex: keyword, $options: "i" };
+
+  const filter: any = {
+    $or: [
+     { name: regex },
+    { email: regex },
+    { role: regex }
+    ],
+      role: { $in: roles },
+  };
 
   if (excludeUserId) {
-    userQuery._id = { $ne: excludeUserId };
-    agentQuery._id = { $ne: excludeUserId };
+    filter._id = { $ne: excludeUserId };
   }
 
-  const [users, agents] = await Promise.all([
-    roles.includes(Role.USER) ? User.find(userQuery).select("_id name email role") : [],
-    roles.includes(Role.AGENT) ? Agent.find(agentQuery).select("_id name email role") : [],
-  ]);
+  const users = await User.find(filter).select("_id name email role");
 
-  return [...users, ...agents];
+  return users;
 };
-
 const getUsers = async () => {
   return await User.find({ role: Role.USER }).select("-password");
 };

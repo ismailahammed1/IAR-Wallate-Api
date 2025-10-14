@@ -6,6 +6,13 @@ export enum Role {
   USER = "USER",
   AGENT = "AGENT",
 }
+export interface UserQueryParams {
+  page?: number;
+  limit?: number;
+  email?: string;
+  role?: string;
+}
+
 
 export enum isActive {
   ACTIVE = "ACTIVE",

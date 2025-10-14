@@ -52,21 +52,16 @@ const getAllUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as JwtPayload & { role: string };
 
-    if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
+    if (!user || (user.role !== Role.SUPER_ADMIN && user.role !== Role.ADMIN)) {
       throw new AppError(StatusCodes.FORBIDDEN, "Access denied");
     }
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const stats = await UserServices.getAllUser();
 
-    const result = await UserServices.getAllUser(page, limit); // ✅ This should exclude SUPER_ADMIN
-
-    sendResponse(res, {
+    res.status(StatusCodes.OK).json({
       success: true,
-      statusCode: StatusCodes.OK,
-      message: "All users retrieved successfully",
-      data: result.data,
-      meta: result.meta,
+      message: "Overview fetched successfully",
+      data: stats,
     });
   }
 );

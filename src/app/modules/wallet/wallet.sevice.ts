@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-useless-catch */
 import { WalletModel } from "./wallet.model"; // Assuming you have the Wallet model defined
 import { AppError } from "../../errorHelpers/AppError";
@@ -26,19 +27,47 @@ try {
 
 
 
-export const getMyTransactions = async (
+const getMyTransactions = async (
   userId: string,
-  { limit = 10, page = 1 }: { limit: number; page: number }
+  {
+    limit = 10,
+    page = 1,
+    type,
+    startDate,
+    endDate,
+  }: {
+    limit: number;
+    page: number;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+  }
 ) => {
   const skip = (page - 1) * limit;
 
-  const filter = {
+  const filter: any = {
     $or: [
       { fromUser: userId },
       { toUser: userId },
       { initiatedByUser: userId },
     ],
   };
+
+  // Add type filter if provided
+  if (type) {
+    filter.transactionType = type;
+  }
+
+  // Add date range filter if provided
+  if (startDate || endDate) {
+    filter.createdAt = {};
+    if (startDate) {
+      filter.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      filter.createdAt.$lte = new Date(endDate);
+    }
+  }
 
   const [transactions, total] = await Promise.all([
     TransactionModel.find(filter)
@@ -83,6 +112,7 @@ try {
   throw (error)
 }
 };
+
 
 
 export const walletService = {

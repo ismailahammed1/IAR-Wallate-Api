@@ -4,8 +4,7 @@ import { StatusCodes } from "http-status-codes";
 
 import { WalletModel } from "../wallet/wallet.model";
 import { TransactionModel } from "./transaction.model";
-import {  User } from "../user/user.model";
-
+import { User } from "../user/user.model";
 
 import { AccountStatus } from "../wallet/wallet.interface";
 import { TransactionStatus, TransactionType } from "./transaction.interface";
@@ -13,42 +12,88 @@ import { AppError } from "../../errorHelpers/AppError";
 import { Role } from "../user/user.interface";
 
 //  Add Money by Approved User
-const addMoneyByUser = async (userId: string, amount: number) => {
-   amount = Number(amount);
-  if (!userId || !amount || amount <= 0) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "User ID and valid amount are required");
+const addMoneyByUser = async (
+  userId: string,
+  amount: number,
+  agentId: string
+) => {
+  amount = Number(amount);
+
+  if (!userId || !agentId || !amount || amount <= 0) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "User ID and valid amount are required"
+    );
   }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
+    const agent = await User.findById(agentId).session(session);
     const user = await User.findById(userId).session(session);
+
     if (!user) throw new AppError(StatusCodes.NOT_FOUND, "User not found");
     if (user.userStatus !== "APPROVED") {
-      throw new AppError(StatusCodes.FORBIDDEN, "Only approved users can add money");
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        "Only approved users can add money"
+      );
+    }
+
+    if (user.role !== Role.USER) {
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        "Invalid user or not authorized"
+      );
+    }
+
+    if (!agent || agent.role !== Role.AGENT) {
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        "Agent not found or invalid role"
+      );
     }
 
     const wallet = await WalletModel.findOne({ user: userId }).session(session);
-    if (!wallet) throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
+    if (!wallet)
+      throw new AppError(StatusCodes.NOT_FOUND, "User wallet not found");
 
+    const agentWallet = await WalletModel.findOne({ user: agentId }).session(
+      session
+    );
+    if (!agentWallet)
+      throw new AppError(StatusCodes.NOT_FOUND, "Agent wallet not found");
+
+    // ✅ Add money to user wallet
     wallet.balance += amount;
     await wallet.save({ session });
 
-    const [transaction] = await TransactionModel.create([{
-      transactionType: TransactionType.ADD,
-      amount,
-      fromUser: userId,
-      toUser: userId,
-      initiatedByUser: userId,
-      status: TransactionStatus.COMPLETED,
-    }], { session });
+    // ✅ Give agent commission (e.g., 1%)
+    const commission = amount * 0.01;
+    agentWallet.balance += commission;
+    await agentWallet.save({ session });
+
+    const [transaction] = await TransactionModel.create(
+      [
+        {
+          transactionType: TransactionType.ADD,
+          amount,
+          fromUser: agentId, // agent initiates
+          toUser: userId, // user receives
+          initiatedByUser: userId,
+          status: TransactionStatus.COMPLETED,
+        },
+      ],
+      { session }
+    );
 
     await session.commitTransaction();
     session.endSession();
 
-    const populatedTransaction = await TransactionModel.findById(transaction._id)
-      .populate("initiatedByUser", "name email role");
+    const populatedTransaction = await TransactionModel.findById(
+      transaction._id
+    ).populate("initiatedByUser", "name email role");
 
     return {
       message: "Money added successfully",
@@ -63,10 +108,17 @@ const addMoneyByUser = async (userId: string, amount: number) => {
 };
 
 //  Withdraw from User to Agent
-const userWithdrawToAgent = async (userId: string, agentId: string, amount: number) => {
- amount = Number(amount);
+const userWithdrawToAgent = async (
+  userId: string,
+  agentId: string,
+  amount: number
+) => {
+  amount = Number(amount);
   if (!userId || !agentId || !amount || amount <= 0) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "User ID, Agent ID, and valid amount are required");
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "User ID, Agent ID, and valid amount are required"
+    );
   }
 
   const session = await mongoose.startSession();
@@ -77,20 +129,34 @@ const userWithdrawToAgent = async (userId: string, agentId: string, amount: numb
     const agent = await User.findById(agentId).session(session);
 
     if (!user || user.role !== Role.USER) {
-      throw new AppError(StatusCodes.FORBIDDEN, "Invalid user or not authorized");
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        "Invalid user or not authorized"
+      );
     }
 
     if (!agent || agent.role !== Role.AGENT) {
-      throw new AppError(StatusCodes.FORBIDDEN, "Agent not found or invalid role");
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        "Agent not found or invalid role"
+      );
     }
 
-    const userWallet = await WalletModel.findOne({ user: userId }).session(session);
-    const agentWallet = await WalletModel.findOne({ user: agentId }).session(session);
+    const userWallet = await WalletModel.findOne({ user: userId }).session(
+      session
+    );
+    const agentWallet = await WalletModel.findOne({ user: agentId }).session(
+      session
+    );
 
-    if (!userWallet || !agentWallet) throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
-    if (userWallet.status === AccountStatus.BLOCKED) throw new AppError(StatusCodes.FORBIDDEN, "User wallet is blocked");
-    if (agentWallet.status === AccountStatus.BLOCKED) throw new AppError(StatusCodes.FORBIDDEN, "Agent wallet is blocked");
-    if (userWallet.balance < amount) throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient balance");
+    if (!userWallet || !agentWallet)
+      throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
+    if (userWallet.status === AccountStatus.BLOCKED)
+      throw new AppError(StatusCodes.FORBIDDEN, "User wallet is blocked");
+    if (agentWallet.status === AccountStatus.BLOCKED)
+      throw new AppError(StatusCodes.FORBIDDEN, "Agent wallet is blocked");
+    if (userWallet.balance < amount)
+      throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient balance");
 
     userWallet.balance -= amount;
     agentWallet.balance += amount;
@@ -98,19 +164,26 @@ const userWithdrawToAgent = async (userId: string, agentId: string, amount: numb
     await userWallet.save({ session });
     await agentWallet.save({ session });
 
-    const [transaction] = await TransactionModel.create([{
-      transactionType: TransactionType.WITHDRAW,
-      amount,
-      fromUser: userId,
-      toUser: agentId,
-      initiatedByUser: userId,
-      status: TransactionStatus.COMPLETED,
-    }], { session });
+    const [transaction] = await TransactionModel.create(
+      [
+        {
+          transactionType: TransactionType.WITHDRAW,
+          amount,
+          fromUser: userId,
+          toUser: agentId,
+          initiatedByUser: userId,
+          status: TransactionStatus.COMPLETED,
+        },
+      ],
+      { session }
+    );
 
     await session.commitTransaction();
     session.endSession();
 
-    const populatedTransaction = await TransactionModel.findById(transaction._id)
+    const populatedTransaction = await TransactionModel.findById(
+      transaction._id
+    )
       .populate("fromUser", "name email role")
       .populate("toUser", "name email role")
       .populate("initiatedByUser", "name email role");
@@ -129,10 +202,17 @@ const userWithdrawToAgent = async (userId: string, agentId: string, amount: numb
 };
 
 //  User to User Transfer
-const sendMoneyByUser = async (senderId: string, receiverId: string, amount: number) => {
+const sendMoneyByUser = async (
+  senderId: string,
+  receiverId: string,
+  amount: number
+) => {
   amount = Number(amount);
   if (!senderId || !receiverId || !amount || amount <= 0) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Sender, receiver, and valid amount are required");
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Sender, receiver, and valid amount are required"
+    );
   }
 
   const session = await mongoose.startSession();
@@ -150,35 +230,46 @@ const sendMoneyByUser = async (senderId: string, receiverId: string, amount: num
       throw new AppError(StatusCodes.FORBIDDEN, "Invalid receiver");
     }
 
-    const senderWallet = await WalletModel.findOne({ user: senderId }).session(session);
-    const receiverWallet = await WalletModel.findOne({ user: receiverId }).session(session);
+    const senderWallet = await WalletModel.findOne({ user: senderId }).session(
+      session
+    );
+    const receiverWallet = await WalletModel.findOne({
+      user: receiverId,
+    }).session(session);
 
-    if (!senderWallet || !receiverWallet) throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
-    if (senderWallet.status === AccountStatus.BLOCKED) throw new AppError(StatusCodes.FORBIDDEN, "Sender wallet is blocked");
-    if (senderWallet.balance < amount) throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient balance");
-
-
+    if (!senderWallet || !receiverWallet)
+      throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
+    if (senderWallet.status === AccountStatus.BLOCKED)
+      throw new AppError(StatusCodes.FORBIDDEN, "Sender wallet is blocked");
+    if (senderWallet.balance < amount)
+      throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient balance");
 
     senderWallet.balance -= amount;
     receiverWallet.balance += amount;
 
-
     await senderWallet.save({ session });
     await receiverWallet.save({ session });
 
-    const [transaction] = await TransactionModel.create([{
-      transactionType: TransactionType.SEND,
-      amount,
-      fromUser: senderId,
-      toUser: receiverId,
-      initiatedByUser: senderId,
-      status: TransactionStatus.COMPLETED,
-    }], { session });
+    const [transaction] = await TransactionModel.create(
+      [
+        {
+          transactionType: TransactionType.SEND,
+          amount,
+          fromUser: senderId,
+          toUser: receiverId,
+          initiatedByUser: senderId,
+          status: TransactionStatus.COMPLETED,
+        },
+      ],
+      { session }
+    );
 
     await session.commitTransaction();
     session.endSession();
 
-    const populatedTransaction = await TransactionModel.findById(transaction._id)
+    const populatedTransaction = await TransactionModel.findById(
+      transaction._id
+    )
       .populate("fromUser", "name email role")
       .populate("toUser", "name email role")
       .populate("initiatedByUser", "name email role");
@@ -196,10 +287,17 @@ const sendMoneyByUser = async (senderId: string, receiverId: string, amount: num
 };
 
 //  Agent Cash In to User
-const agentCashInToUser = async (agentId: string, userId: string, amount: number) => {
- amount = Number(amount);
+const agentCashInToUser = async (
+  agentId: string,
+  userId: string,
+  amount: number
+) => {
+  amount = Number(amount);
   if (!agentId || !userId || !amount || amount <= 0) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Agent ID, User ID, and valid amount are required");
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Agent ID, User ID, and valid amount are required"
+    );
   }
 
   const session = await mongoose.startSession();
@@ -217,25 +315,44 @@ const agentCashInToUser = async (agentId: string, userId: string, amount: number
       throw new AppError(StatusCodes.FORBIDDEN, "Invalid user");
     }
 
-    const userWallet = await WalletModel.findOne({ user: userId }).session(session);
-    if (!userWallet) throw new AppError(StatusCodes.NOT_FOUND, "User wallet not found");
+    const userWallet = await WalletModel.findOne({ user: userId }).session(
+      session
+    );
+    if (!userWallet)
+      throw new AppError(StatusCodes.NOT_FOUND, "User wallet not found");
 
     userWallet.balance += amount;
     await userWallet.save({ session });
+        //  agent wallet
+    const agentWallet = await WalletModel.findOne({ user: agentId }).session(
+      session
+    );
+    if (!agentWallet)
+      throw new AppError(StatusCodes.NOT_FOUND, "Agent wallet not found");
 
-    const [transaction] = await TransactionModel.create([{
-      transactionType: TransactionType.CASH_IN,
-      amount,
-      fromAgent: agentId,
-      toUser: userId,
-      initiatedByAgent: agentId,
-      status: TransactionStatus.COMPLETED,
-    }], { session });
+    agentWallet.balance -= amount;
+    await agentWallet.save({ session });
+
+    const [transaction] = await TransactionModel.create(
+      [
+        {
+          transactionType: TransactionType.CASH_IN,
+          amount,
+          fromAgent: agentId,
+          toUser: userId,
+          initiatedByAgent: agentId,
+          status: TransactionStatus.COMPLETED,
+        },
+      ],
+      { session }
+    );
 
     await session.commitTransaction();
     session.endSession();
 
-    const populatedTransaction = await TransactionModel.findById(transaction._id)
+    const populatedTransaction = await TransactionModel.findById(
+      transaction._id
+    )
       .populate("fromAgent", "name email role")
       .populate("toUser", "name email role")
       .populate("initiatedByAgent", "name email role");
@@ -253,10 +370,17 @@ const agentCashInToUser = async (agentId: string, userId: string, amount: number
 };
 
 //  Agent Cash Out from User
-const agentCashOutFromUser = async (agentId: string, userId: string, amount: number) => {
+const agentCashOutFromUser = async (
+  agentId: string,
+  userId: string,
+  amount: number
+) => {
   amount = Number(amount);
   if (!agentId || !userId || !amount || amount <= 0) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Agent ID, User ID, and valid amount are required");
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Agent ID, User ID, and valid amount are required"
+    );
   }
 
   const session = await mongoose.startSession();
@@ -274,26 +398,47 @@ const agentCashOutFromUser = async (agentId: string, userId: string, amount: num
       throw new AppError(StatusCodes.FORBIDDEN, "Invalid user");
     }
 
-    const userWallet = await WalletModel.findOne({ user: userId }).session(session);
-    if (!userWallet) throw new AppError(StatusCodes.NOT_FOUND, "User wallet not found");
-    if (userWallet.balance < amount) throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient user balance");
+    const userWallet = await WalletModel.findOne({ user: userId }).session(
+      session
+    );
+    if (!userWallet)
+      throw new AppError(StatusCodes.NOT_FOUND, "User wallet not found");
+    if (userWallet.balance < amount)
+      throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient user balance");
 
     userWallet.balance -= amount;
     await userWallet.save({ session });
 
-    const [transaction] = await TransactionModel.create([{
-      transactionType: TransactionType.CASH_OUT,
-      amount,
-      fromUser: userId,
-      toUser: agentId,
-      initiatedByAgent: agentId,
-      status: TransactionStatus.COMPLETED,
-    }], { session });
+    // Credit agent wallet
+    const agentWallet = await WalletModel.findOne({ user: agentId }).session(
+      session
+    );
+    if (!agentWallet)
+      throw new AppError(StatusCodes.NOT_FOUND, "Agent wallet not found");
+
+    agentWallet.balance += amount;
+    await agentWallet.save({ session });
+
+    const [transaction] = await TransactionModel.create(
+      [
+        {
+          transactionType: TransactionType.CASH_OUT,
+          amount,
+          fromUser: userId,
+          toUser: agentId,
+          initiatedByAgent: agentId,
+          status: TransactionStatus.COMPLETED,
+        },
+      ],
+      { session }
+    );
 
     await session.commitTransaction();
     session.endSession();
 
-    const populatedTransaction = await TransactionModel.findById(transaction._id)
+    const populatedTransaction = await TransactionModel.findById(
+      transaction._id
+    )
       .populate("fromUser", "name email role")
       .populate("toUser", "name email role")
       .populate("initiatedByAgent", "name email role");
@@ -313,10 +458,10 @@ const agentCashOutFromUser = async (agentId: string, userId: string, amount: num
 //  Get All User Transactions
 const getUserTransactions = async () => {
   const users = await User.find({ role: Role.USER }, "_id");
-  const userIds = users.map(user => user._id);
+  const userIds = users.map((user) => user._id);
 
   const transactions = await TransactionModel.find({
-    initiatedByUser: { $in: userIds }
+    initiatedByUser: { $in: userIds },
   });
 
   return transactions;
@@ -325,10 +470,10 @@ const getUserTransactions = async () => {
 //  Get All Agent Transactions
 const getAgentTransactions = async () => {
   const agents = await User.find({ role: Role.AGENT }, "_id");
-  const agentIds = agents.map((agent: { _id: any; }) => agent._id);
+  const agentIds = agents.map((agent: { _id: any }) => agent._id);
 
   const transactions = await TransactionModel.find({
-    initiatedByAgent: { $in: agentIds }
+    initiatedByAgent: { $in: agentIds },
   });
 
   return transactions;

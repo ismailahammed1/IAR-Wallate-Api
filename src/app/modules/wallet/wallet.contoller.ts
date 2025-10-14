@@ -38,11 +38,15 @@ const getMyWallet = catchAsync(async (req: Request, res: Response, next: NextFun
  const getMyTransactions = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as { userId: string };
-    const { limit = 10, page = 1 } = req.query;
+
+    const { limit = 10, page = 1, type, startDate, endDate } = req.query;
 
     const result = await walletService.getMyTransactions(user.userId, {
       limit: Number(limit),
       page: Number(page),
+      type: type as string,
+      startDate: startDate as string,
+      endDate: endDate as string,
     });
 
     res.status(200).json({
@@ -89,6 +93,8 @@ const unblockWallet = catchAsync(async (req: Request, res: Response, next: NextF
     data: wallet,
   });
 });
+
+
 
 export const walletContoller={
     getMyWallet,

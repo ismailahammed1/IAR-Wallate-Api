@@ -128,7 +128,7 @@ const approveAgentAndUserRequest = async (userId: string, verifiedToken: JwtPayl
   }
 
   // First try Agent
-  let user = await Agent.findById(userId);
+  let user = await User.findById(userId);
   if (!user) {
     // Try User
     user = await User.findById(userId);
@@ -151,7 +151,7 @@ const approveAgentAndUserRequest = async (userId: string, verifiedToken: JwtPayl
 };
 
  const suspendAgentRequest = async (id: string) => {
-  const agent = await Agent.findById(id);
+  const agent = await User.findById(id);
   if (!agent) {
     throw new AppError(StatusCodes.NOT_FOUND, "Agent not found");
   }

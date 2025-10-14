@@ -24,5 +24,14 @@ router.get(
   checkAuth(  Role.AGENT, Role.USER),
  userContoller.searchUsers
 );
-router.get("/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), userContoller.getSingleUser)
+router.get("/singleuser", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), userContoller.getSingleUser)
+router.get("/users", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), userContoller.getUsers);
+router.get("/agents", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), userContoller.getAgents);
+
+router.patch("/block-unblock/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), userContoller.blockUnblockUser);
+router.patch("/approve-agent/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), userContoller.approveAgent);
+router.patch("/suspend-agent/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), userContoller.suspendAgent);
+
+
+
 export const UserRoutes = router;

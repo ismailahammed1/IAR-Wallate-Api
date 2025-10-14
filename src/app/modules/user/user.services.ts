@@ -5,7 +5,7 @@
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
 import { AppError } from "../../errorHelpers/AppError";
-import { IAuthProvider, Iuser, AuthProviderType, Role } from "./user.interface";
+import { IAuthProvider, Iuser, AuthProviderType, Role, userStatus, isActive } from "./user.interface";
 import bcryptjs from "bcryptjs";
 import { StatusCodes } from "http-status-codes";
 import { Agent, User } from "./user.model";
@@ -52,26 +52,25 @@ if (![Role.USER, Role.AGENT].includes(role)) {
   return newUser;
 };
 
-const getAllUser = async (page = 1, limit = 1) => {
+const getAllUser =  async (page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
 
-    const filter = { role: { $ne: Role.SUPER_ADMIN } };
+  // Include AGENT and USER roles, exclude SUPER_ADMIN
+  const filter = {
+    role: { $in: [Role.USER, Role.AGENT] },
+  };
 
-  const [users, totalUsers] = await Promise.all([
-    User.find(filter).skip(skip).limit(limit).select("-password"),
-    User.countDocuments({}),
-  ]);
+  // Fetch users with pagination, exclude passwords
+  const users = await User.find(filter)
+    .skip(skip)
+    .limit(limit)
+    .select("-password");
 
-  const [agents, totalAgents] = await Promise.all([
-    Agent.find({}).skip(skip).limit(limit).select("-password"),
-    Agent.countDocuments({}),
-  ]);
-
-  const allUsers = [...users, ...agents];
-  const total = totalUsers + totalAgents;
+  // Count total matching users
+  const total = await User.countDocuments(filter);
 
   return {
-    data: allUsers,
+    data: users,
     meta: {
       page,
       limit,
@@ -81,13 +80,20 @@ const getAllUser = async (page = 1, limit = 1) => {
   };
 };
 
+const getSingleUser = async (email: string) => {
+  const user = await User.findOne({ email }).select("-password");
+  if (!user) {
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+  }
 
-const getSingleUser = async (id: string) => {
-  const user = await User.findById(id).select("-password");
   return {
     data: user,
   };
 };
+
+
+
+
 const getMe = async (userId: string) => {
   const user =
     (await User.findById(userId).select("-password")) ||
@@ -203,7 +209,54 @@ const searchUsers = async (
   return [...users, ...agents];
 };
 
+const getUsers = async () => {
+  return await User.find({ role: Role.USER }).select("-password");
+};
 
+const getAgents = async () => {
+  return await User.find({ role: Role.AGENT }).select("-password");
+};
+
+const blockOrUnblockUser = async (id: string, action: "block" | "unblock") => {
+  const user = await User.findById(id);
+  if (!user) throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+
+  if (action === "block") {
+    user.isActive = isActive.BLOCKED;
+  } else if (action === "unblock") {
+    user.isActive = isActive.ACTIVE;
+  } else {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Invalid action");
+  }
+
+  await user.save();
+  return user;
+};
+
+const approveAgent = async (id: string) => {
+  const agent = await User.findById(id);
+  if (!agent) throw new AppError(StatusCodes.NOT_FOUND, "Agent not found");
+  if (agent.role !== Role.AGENT) throw new AppError(StatusCodes.BAD_REQUEST, "Not an agent");
+
+  agent.userStatus = userStatus.APPROVED;
+  agent.isVerified = true;
+  agent.approved = true;
+
+  await agent.save();
+  return agent;
+};
+
+const suspendAgent = async (id: string) => {
+  const agent = await User.findById(id);
+  if (!agent) throw new AppError(StatusCodes.NOT_FOUND, "Agent not found");
+  if (agent.role !== Role.AGENT) throw new AppError(StatusCodes.BAD_REQUEST, "Not an agent");
+
+  agent.userStatus = userStatus.SUSPENDED;
+  agent.isActive = isActive.INACTIVE;
+
+  await agent.save();
+  return agent;
+};
 
 
 export const UserServices = {
@@ -212,5 +265,11 @@ export const UserServices = {
   userUpdated,
   getMe,
   getSingleUser,
-  searchUsers
+  searchUsers,
+
+    getUsers,
+  getAgents,
+  blockOrUnblockUser,
+  approveAgent,
+  suspendAgent,
 };

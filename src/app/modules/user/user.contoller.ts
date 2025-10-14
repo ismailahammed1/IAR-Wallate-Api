@@ -11,6 +11,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { WalletModel } from "../wallet/wallet.model";
 import { AccountStatus } from "../wallet/wallet.interface";
 import { Iuser, Role } from "./user.interface";
+import { AppError } from "../../errorHelpers/AppError";
 
 
 
@@ -49,14 +50,20 @@ const userRegister = catchAsync(
 
 const getAllUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as JwtPayload & { role: string };
+
+    if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
+      throw new AppError(StatusCodes.FORBIDDEN, "Access denied");
+    }
+
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const result = await UserServices.getAllUser(page, limit);
+    const result = await UserServices.getAllUser(page, limit); // ✅ This should exclude SUPER_ADMIN
 
     sendResponse(res, {
       success: true,
-      statusCode: 200,
+      statusCode: StatusCodes.OK,
       message: "All users retrieved successfully",
       data: result.data,
       meta: result.meta,
@@ -76,16 +83,28 @@ const getMe = catchAsync(async (req: Request, res: Response, next: NextFunction)
         data: result.data
     })
 })
-const getSingleUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const id = req.params.id;
-    const result = await UserServices.getSingleUser(id);
+
+
+const getSingleUser = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { email } = req.body;
+
+    if (!email || typeof email !== "string") {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Email is required");
+    }
+
+    const result = await UserServices.getSingleUser(email);
+
     sendResponse(res, {
-        success: true,
-        statusCode: StatusCodes.CREATED,
-        message: "User Retrieved Successfully",
-        data: result.data
-    })
-})
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "User retrieved successfully",
+      data: result.data,
+    });
+  }
+);
+
+
 
 const newUpdatedUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -147,6 +166,67 @@ switch (currentUser.role) {
   });
 });
 
+const getUsers = catchAsync(async (_req, res) => {
+  const users = await UserServices.getUsers();
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Users retrieved successfully",
+    data: users,
+  });
+});
+
+// Get all agents
+const getAgents = catchAsync(async (_req, res) => {
+  const agents = await UserServices.getAgents();
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Agents retrieved successfully",
+    data: agents,
+  });
+});
+
+// Block or unblock user
+const blockUnblockUser = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { action } = req.body; // "block" or "unblock"
+
+  const updatedUser = await UserServices.blockOrUnblockUser(id, action);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: `User ${action}ed successfully`,
+    data: updatedUser,
+  });
+});
+
+// Approve agent
+const approveAgent = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const approvedAgent = await UserServices.approveAgent(id);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Agent approved successfully",
+    data: approvedAgent,
+  });
+});
+
+// Suspend agent
+const suspendAgent = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const suspendedAgent = await UserServices.suspendAgent(id);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Agent suspended successfully",
+    data: suspendedAgent,
+  });
+});
 
 
 export default {
@@ -155,6 +235,11 @@ export default {
   newUpdatedUser,
   getMe,
   getSingleUser,
-searchUsers
+searchUsers,
+  getUsers,
+  getAgents,
+  blockUnblockUser,
+  approveAgent,
+  suspendAgent,
 
 };

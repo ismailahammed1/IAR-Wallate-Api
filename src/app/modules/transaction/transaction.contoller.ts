@@ -11,9 +11,9 @@ import { transactionService } from "./transaction.service";
 const userAddMoney = catchAsync(async (req: Request, res: Response, next:NextFunction ) => {
   const loginUser = req.user as JwtPayload;
   const userId=loginUser.userId
-  const { amount } = req.body;
+  const { agentId, amount } = req.body;
 
-  const result = await transactionService.addMoneyByUser(userId, amount);
+  const result = await transactionService.addMoneyByUser(userId, amount, agentId);
 
   res.status(200).json({
     success: true,

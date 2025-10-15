@@ -134,10 +134,26 @@ const getUserTransactions = catchAsync(
   }
 );
 
+const getAllTransactions = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as JwtPayload;
+    if (user.role !== Role.ADMIN && user.role !== Role.SUPER_ADMIN) {
+      return next(new AppError(403, "Only admins can access transactions"));
+    }
+
+    const transactions = await transactionService.getAllTransactions(req.query);
+
+    res.status(200).json({
+      success: true,
+      message: "Transactions fetched successfully",
+      data: transactions,
+    });
+  }
+);
 
 export const transactionContoller = {
   userAddMoney,
-
+getAllTransactions,
   userWithdrawToAgent,
   sendMoney,
   agentCashIn,

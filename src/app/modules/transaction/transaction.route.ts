@@ -9,6 +9,9 @@ import { transactionContoller } from "./transaction.contoller";
 
 const router = Router();
 // user transaction route
+router.post("/all-transactions", checkAuth(Role.USER), transactionContoller.getAllTransactions)
+
+
 router.post("/add-money", checkAuth(Role.USER), transactionContoller.userAddMoney)
 router.post("/withdraw", checkAuth(Role.USER), transactionContoller.userWithdrawToAgent)
 router.post("/send-money", checkAuth(Role.USER), transactionContoller.sendMoney)

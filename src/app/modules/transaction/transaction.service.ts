@@ -478,6 +478,67 @@ const getAgentTransactions = async () => {
 
   return transactions;
 };
+// transaction.service.ts
+
+const getAllTransactions = async (query: any) => {
+  const {
+    role,          // "USER" or "AGENT"
+    type,          // "SEND_MONEY", "WITHDRAW", etc.
+    search,        // name / email / phone
+    from,          // start date
+    to,            // end date
+  } = query;
+
+  const userFilter: any = {};
+  if (role === "USER" || role === "AGENT") {
+    userFilter.role = role;
+  }
+
+  const users = await User.find(userFilter, "_id");
+  const userIds = users.map((u) => u._id);
+
+  const transactionFilter: any = {};
+  if (role === "USER") {
+    transactionFilter.initiatedByUser = { $in: userIds };
+  } else if (role === "AGENT") {
+    transactionFilter.initiatedByAgent = { $in: userIds };
+  }
+
+  if (type) {
+    transactionFilter.type = type;
+  }
+
+  if (from && to) {
+    transactionFilter.createdAt = {
+      $gte: new Date(from),
+      $lte: new Date(to),
+    };
+  }
+
+  if (search) {
+    const searchUsers = await User.find({
+      ...userFilter,
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ],
+    });
+
+    const ids = searchUsers.map((u) => u._id);
+    if (role === "USER") {
+      transactionFilter.initiatedByUser = { $in: ids };
+    } else if (role === "AGENT") {
+      transactionFilter.initiatedByAgent = { $in: ids };
+    }
+  }
+
+  const transactions = await TransactionModel.find(transactionFilter)
+    .populate("initiatedByUser")
+    .populate("initiatedByAgent");
+
+  return transactions;
+};
 
 //  Export Service
 export const transactionService = {
@@ -488,4 +549,5 @@ export const transactionService = {
   agentCashOutFromUser,
   getUserTransactions,
   getAgentTransactions,
+  getAllTransactions,
 };

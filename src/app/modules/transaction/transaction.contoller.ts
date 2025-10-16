@@ -67,7 +67,7 @@ const sendMoney = catchAsync(async (req: Request, res: Response, next:NextFuncti
 
 // agent transactionContoller
 
-export const agentCashIn = catchAsync(async (req: Request, res: Response, next:NextFunction ) => {
+const agentCashIn = catchAsync(async (req: Request, res: Response, next:NextFunction ) => {
   const agentId = (req.user as JwtPayload).userId;
   const { userId, amount } = req.body;
 
@@ -81,7 +81,7 @@ export const agentCashIn = catchAsync(async (req: Request, res: Response, next:N
   });
 });
 
-export const agentCashOut = catchAsync(async (req: Request, res: Response, next:NextFunction ) => {
+const agentCashOut = catchAsync(async (req: Request, res: Response, next:NextFunction ) => {
   const agentId = (req.user as JwtPayload).userId;
   const { userId, amount } = req.body;
 

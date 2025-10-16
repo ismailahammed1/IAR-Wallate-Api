@@ -479,66 +479,100 @@ const getAgentTransactions = async () => {
   return transactions;
 };
 // transaction.service.ts
-
 const getAllTransactions = async (query: any) => {
   const {
-    role,          // "USER" or "AGENT"
-    type,          // "SEND_MONEY", "WITHDRAW", etc.
-    search,        // name / email / phone
-    from,          // start date
-    to,            // end date
+    role,
+    transactionType,
+    search,
+    from,
+    to,
+    page = 1,
+    limit = 10,
   } = query;
 
-  const userFilter: any = {};
-  if (role === "USER" || role === "AGENT") {
-    userFilter.role = role;
+  const parsedPage = parseInt(page);
+  const parsedLimit = parseInt(limit);
+
+  let userIds: ((string | mongoose.Types.ObjectId | undefined) & (string | mongoose.Types.ObjectId))[] = [];
+
+  if (role === "USER") {
+    const users = await User.find({}, "_id");
+    userIds = users.map((u) => u._id);
+  } else if (role === "AGENT") {
+    const agents = await User.find({}, "_id");
+    userIds = agents.map((a) => a._id);
   }
 
-  const users = await User.find(userFilter, "_id");
-  const userIds = users.map((u) => u._id);
-
   const transactionFilter: any = {};
+
   if (role === "USER") {
     transactionFilter.initiatedByUser = { $in: userIds };
   } else if (role === "AGENT") {
     transactionFilter.initiatedByAgent = { $in: userIds };
   }
 
-  if (type) {
-    transactionFilter.type = type;
+  if (transactionType && transactionType !== "all") {
+    transactionFilter.transactionType = transactionType;
   }
 
   if (from && to) {
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    toDate.setHours(23, 59, 59, 999);
+
     transactionFilter.createdAt = {
-      $gte: new Date(from),
-      $lte: new Date(to),
+      $gte: fromDate,
+      $lte: toDate,
     };
   }
 
   if (search) {
-    const searchUsers = await User.find({
-      ...userFilter,
+    const searchConditions = {
       $or: [
         { name: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
         { phone: { $regex: search, $options: "i" } },
       ],
-    });
+    };
 
-    const ids = searchUsers.map((u) => u._id);
+    const users = await User.find(searchConditions, "_id");
+    const searchIds = users.map((u) => u._id);
+
     if (role === "USER") {
-      transactionFilter.initiatedByUser = { $in: ids };
+      transactionFilter.initiatedByUser = { $in: searchIds };
     } else if (role === "AGENT") {
-      transactionFilter.initiatedByAgent = { $in: ids };
+      transactionFilter.initiatedByAgent = { $in: searchIds };
+    } else {
+      transactionFilter.$or = [
+        { initiatedByUser: { $in: searchIds } },
+        { initiatedByAgent: { $in: searchIds } },
+      ];
     }
   }
 
-  const transactions = await TransactionModel.find(transactionFilter)
-    .populate("initiatedByUser")
-    .populate("initiatedByAgent");
+  // Count total BEFORE pagination
+  const total = await TransactionModel.countDocuments(transactionFilter);
 
-  return transactions;
+  // Paginated query
+  const transactions = await TransactionModel.find(transactionFilter)
+    .populate("initiatedByUser", "name email phone role")
+    .populate("initiatedByAgent", "name email phone role")
+    .populate("fromUser", "name email phone role")
+    .populate("toUser", "name email phone role")
+    .populate("fromAgent", "name email phone role")
+    .populate("toAgent", "name email phone role")
+    .skip((parsedPage - 1) * parsedLimit)
+    .limit(parsedLimit)
+    .sort({ createdAt: -1 }); // Optional: latest first
+
+  return {
+    data: transactions,
+    total,
+    page: parsedPage,
+    limit: parsedLimit,
+  };
 };
+
 
 //  Export Service
 export const transactionService = {

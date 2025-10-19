@@ -53,24 +53,45 @@ if (![Role.USER, Role.AGENT].includes(role)) {
   return newUser;
 };
 
+
 const getAllUser = async () => {
   const totalUsers = await User.countDocuments({ role: Role.USER });
   const totalAgents = await User.countDocuments({ role: Role.AGENT });
   const transactionCount = await TransactionModel.countDocuments();
 
-  const totalVolumeAgg = await TransactionModel.aggregate([
-    { $group: { _id: null, totalVolume: { $sum: "$amount" } } },
-  ]);
+  const volumeByType = await TransactionModel.aggregate([
+  {
+    $group: {
+      _id: "$transactionType",
+      total: { $sum: "$amount" },
+    },
+  },
+]);
 
-  const transactionVolume = totalVolumeAgg[0]?.totalVolume || 0;
-
-  return {
-    totalUsers,
-    totalAgents,
-    transactionCount,
-    transactionVolume,
-  };
+// Initialize with all types and default to 0
+const transactionVolume = {
+  ADD: 0,
+  SEND: 0,
+  RECEIVE: 0,
+  WITHDRAW: 0,
+  CASH_IN: 0,
+  CASH_OUT: 0,
 };
+
+for (const record of volumeByType) {
+  const type = record._id as keyof typeof transactionVolume;
+  transactionVolume[type] = record.total;
+}
+
+return {
+  totalUsers,
+  totalAgents,
+  transactionCount,
+  transactionVolume,
+};
+
+};
+
 
 const getSingleUser = async (email: string) => {
   const user = await User.findOne({ email }).select("-password");
@@ -107,7 +128,6 @@ const userUpdated = async (
   try {
     const allowedSelfUpdateFieldsSet = new Set([
       "name",
-      "password",
       "picture",
       "phone",
       "address",

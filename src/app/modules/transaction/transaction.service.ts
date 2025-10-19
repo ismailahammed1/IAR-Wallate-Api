@@ -488,19 +488,19 @@ const getAllTransactions = async (query: any) => {
     to,
     page = 1,
     limit = 10,
+    status,
+    minAmount,
+    maxAmount,
   } = query;
 
   const parsedPage = parseInt(page);
   const parsedLimit = parseInt(limit);
 
-  let userIds: ((string | mongoose.Types.ObjectId | undefined) & (string | mongoose.Types.ObjectId))[] = [];
+  let userIds: (string | mongoose.Types.ObjectId)[] = [];
 
-  if (role === "USER") {
+  if (role === "USER" || role === "AGENT") {
     const users = await User.find({}, "_id");
     userIds = users.map((u) => u._id);
-  } else if (role === "AGENT") {
-    const agents = await User.find({}, "_id");
-    userIds = agents.map((a) => a._id);
   }
 
   const transactionFilter: any = {};
@@ -515,6 +515,23 @@ const getAllTransactions = async (query: any) => {
     transactionFilter.transactionType = transactionType;
   }
 
+  // ✅ Status filter
+  if (status && status !== "all") {
+    transactionFilter.status = status;
+  }
+
+  // ✅ Amount filters
+  if (minAmount != null) {
+    transactionFilter.amount = transactionFilter.amount || {};
+    transactionFilter.amount.$gte = parseFloat(minAmount);
+  }
+
+  if (maxAmount != null) {
+    transactionFilter.amount = transactionFilter.amount || {};
+    transactionFilter.amount.$lte = parseFloat(maxAmount);
+  }
+
+  // ✅ Date range
   if (from && to) {
     const fromDate = new Date(from);
     const toDate = new Date(to);
@@ -526,6 +543,7 @@ const getAllTransactions = async (query: any) => {
     };
   }
 
+  // ✅ Search
   if (search) {
     const searchConditions = {
       $or: [
@@ -550,10 +568,8 @@ const getAllTransactions = async (query: any) => {
     }
   }
 
-  // Count total BEFORE pagination
   const total = await TransactionModel.countDocuments(transactionFilter);
 
-  // Paginated query
   const transactions = await TransactionModel.find(transactionFilter)
     .populate("initiatedByUser", "name email phone role")
     .populate("initiatedByAgent", "name email phone role")
@@ -563,7 +579,7 @@ const getAllTransactions = async (query: any) => {
     .populate("toAgent", "name email phone role")
     .skip((parsedPage - 1) * parsedLimit)
     .limit(parsedLimit)
-    .sort({ createdAt: -1 }); // Optional: latest first
+    .sort({ createdAt: -1 });
 
   return {
     data: transactions,
@@ -572,6 +588,7 @@ const getAllTransactions = async (query: any) => {
     limit: parsedLimit,
   };
 };
+
 
 
 //  Export Service

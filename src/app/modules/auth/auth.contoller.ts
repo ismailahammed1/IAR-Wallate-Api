@@ -88,20 +88,15 @@ const logout = catchAsync(
 
 const changePassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const newPassword = req.body.newPassword;
-    const oldPassword = req.body.oldPassword;
-    const decodedToken = req.user;
+    const { oldPassword, newPassword,confirmPassword } = req.body;
+    const decodedToken = req.user ;
 
-    await authServices.changePassword(
-      oldPassword,
-      newPassword,
-      decodedToken as JwtPayload
-    );
+   await authServices.changePassword(oldPassword, newPassword,confirmPassword, decodedToken as JwtPayload);
 
     sendResponse(res, {
       success: true,
       statusCode: StatusCodes.OK,
-      message: "Password Changed Successfully",
+      message: "Password changed successfully",
       data: null,
     });
   }

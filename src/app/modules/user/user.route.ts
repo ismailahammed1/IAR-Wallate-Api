@@ -15,9 +15,10 @@ router.post(
 router.get("/all-users", checkAuth(Role.ADMIN,Role.SUPER_ADMIN), userContoller.getAllUser);
 router.patch(
   "/update",
-  checkAuth(Role.ADMIN,Role.AGENT, Role.USER),
+  checkAuth(Role.ADMIN, Role.AGENT, Role.USER, Role.SUPER_ADMIN),
   userContoller.newUpdatedUser
 );
+
 router.get("/me", checkAuth(...Object.values(Role)), userContoller.getMe)
 router.get(
   "/search",

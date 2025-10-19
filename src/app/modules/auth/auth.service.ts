@@ -19,24 +19,50 @@ const getNewAccessToken = async (refreshToken: string) => {
 
 
 
-const changePassword = async (oldPassword: string, newPassword: string, decodedToken: JwtPayload) => {
-
+const changePassword = async (
+  oldPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+  decodedToken: JwtPayload
+) => {
   const user = await User.findById(decodedToken.userId);
-if (!user) {
-   throw new AppError(StatusCodes.NOT_FOUND, "User not found")
-}
 
-    const isOldPasswordMatch = await bcryptjs.compare(oldPassword, user.password as string)
-    if (!isOldPasswordMatch) {
-        throw new AppError(StatusCodes.UNAUTHORIZED, "Old Password does not match");
-    }
+  if (!user) {
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+  }
 
-    user.password = await bcryptjs.hash(newPassword, Number(envVars.BCRYPT_SALT_ROUND))
+  //  Check if old password matches
+  const isOldPasswordMatch = await bcryptjs.compare(
+    oldPassword,
+    user.password as string
+  );
 
-    await user.save();
+  if (!isOldPasswordMatch) {
+    throw new AppError(
+      StatusCodes.UNAUTHORIZED,
+      "Old password does not match"
+    );
+  }
+
+  //  Check if new password and confirm password match
+  if (newPassword !== confirmPassword) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "New password and confirmation do not match"
+    );
+  }
+
+  //  Hash and update new password
+  user.password = await bcryptjs.hash(
+    newPassword,
+    Number(envVars.BCRYPT_SALT_ROUND)
+  );
+
+  await user.save();
+};
 
 
-}
+
 const resetPassword = async (payload: { newPassword: string }, decodedToken: JwtPayload) => {
   const user = await User.findById(decodedToken.userId);
   if (!user) {

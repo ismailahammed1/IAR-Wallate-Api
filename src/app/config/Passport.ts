@@ -34,8 +34,7 @@ passport.use(
     async (email: string, password: string, done) => {
       try {
         const user =
-          (await User.findOne({ email })) ||
-          (await Agent.findOne({ email }));
+          await User.findOne({ email })
 
         if (!user) {
           return done(null, false, { message: "User does not exist" });

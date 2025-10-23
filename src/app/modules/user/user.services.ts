@@ -10,6 +10,7 @@ import bcryptjs from "bcryptjs";
 import { StatusCodes } from "http-status-codes";
 import { Agent, User } from "./user.model";
 import { TransactionModel } from "../transaction/transaction.model";
+import { WalletModel } from "../wallet/wallet.model";
 
 
 const createUser = async (payload: Partial<Iuser>) => {
@@ -82,12 +83,21 @@ for (const record of volumeByType) {
   const type = record._id as keyof typeof transactionVolume;
   transactionVolume[type] = record.total;
 }
+const totalWalletBalance = await WalletModel.aggregate([
+  {
+    $group: {
+      _id: null,
+      total: { $sum: "$balance" },
+    },
+  },
+]);
 
 return {
   totalUsers,
   totalAgents,
   transactionCount,
   transactionVolume,
+  totalWalletBalance: totalWalletBalance[0]?.total || 0,
 };
 
 };

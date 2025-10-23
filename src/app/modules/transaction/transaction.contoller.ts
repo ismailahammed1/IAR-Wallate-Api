@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { StatusCodes } from "http-status-codes";
 import { sendResponse } from "../../utils/sendResponse";
@@ -65,47 +66,71 @@ const sendMoney = catchAsync(async (req: Request, res: Response, next:NextFuncti
 });
 
 
-// agent transactionContoller
 
-const agentCashIn = catchAsync(async (req: Request, res: Response, next:NextFunction ) => {
-  const agentId = (req.user as JwtPayload).userId;
+export const agentCashIn = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const agentId = (req.user as JwtPayload).userId;       // ensure your auth middleware sets this
   const { userId, amount } = req.body;
 
   const result = await transactionService.agentCashInToUser(agentId, userId, amount);
-
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
+  res.status(StatusCodes.OK).json({
     success: true,
     message: result.message,
-    data: result,
+    data: {
+      newUserBalance: result.newUserBalance,
+      newAgentBalance: result.newAgentBalance,
+      transaction: result.transaction,
+    },
   });
 });
 
-const agentCashOut = catchAsync(async (req: Request, res: Response, next:NextFunction ) => {
+export const agentCashOut = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const agentId = (req.user as JwtPayload).userId;
   const { userId, amount } = req.body;
 
   const result = await transactionService.agentCashOutFromUser(agentId, userId, amount);
-
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
+  res.status(StatusCodes.OK).json({
     success: true,
     message: result.message,
-    data: result,
+    data: {
+      newUserBalance: result.newUserBalance,
+      newAgentBalance: result.newAgentBalance,
+      transaction: result.transaction,
+    },
   });
 });
 
-const getAgentTransactions = catchAsync(
+
+
+const getUserTransactions = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-
-
     const user = req.user as JwtPayload;
 
-    if (user.role !== Role.ADMIN && user.role !== Role.SUPER_ADMIN) {
-      return next(new AppError(403, "Only admins can access agent transactions"));
+    if (user.role !== Role.ADMIN && user.role !== Role.SUPER_ADMIN && user.role !== Role.USER) {
+      return next(new AppError(403, "Only users or admins can access user transactions"));
     }
 
-    const transactions = await transactionService.getAgentTransactions();
+    const transactions = await transactionService.getUserTransactions(req.query);
+
+    res.status(200).json({
+      success: true,
+      message: "User transactions fetched successfully",
+      data: transactions,
+    });
+  }
+);
+
+
+
+
+const getAgentTransactions = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as JwtPayload;
+
+    if (user.role !== Role.ADMIN && user.role !== Role.SUPER_ADMIN && user.role !== Role.AGENT) {
+      return next(new AppError(403, "Only agents or admins can access agent transactions"));
+    }
+
+    const transactions = await transactionService.getAgentTransactions(req.query);
 
     res.status(200).json({
       success: true,
@@ -114,25 +139,9 @@ const getAgentTransactions = catchAsync(
     });
   }
 );
-const getUserTransactions = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
 
 
-    const user = req.user as JwtPayload;
 
-    if (user.role !== Role.ADMIN && user.role !== Role.SUPER_ADMIN) {
-      return next(new AppError(403, "Only admins can access agent transactions"));
-    }
-
-    const transactions = await transactionService.getUserTransactions();
-
-    res.status(200).json({
-      success: true,
-      message: "user transactions fetched successfully",
-      data: transactions,
-    });
-  }
-);
 
 const getAllTransactions = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -151,6 +160,34 @@ const getAllTransactions = catchAsync(
   }
 );
 
+ const getMyTransactions = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as JwtPayload;
+    const userId = user.userId;
+    const role = user.role;
+
+    if (role === Role.USER) {
+      const result = await transactionService.getUserOwnTransactions(req.query, userId);
+      return res.status(200).json({
+        success: true,
+        message: "User transactions fetched successfully",
+        data: result,
+      });
+    }
+
+    if (role === Role.AGENT) {
+      const result = await transactionService.getAgentOwnTransactions(req.query, userId);
+      return res.status(200).json({
+        success: true,
+        message: "Agent transactions fetched successfully",
+        data: result,
+      });
+    }
+
+    throw new AppError(403, "Only users or agents can access this route");
+  }
+);
+
 export const transactionContoller = {
   userAddMoney,
 getAllTransactions,
@@ -158,6 +195,7 @@ getAllTransactions,
   sendMoney,
   agentCashIn,
   agentCashOut,
+getMyTransactions,
   getAgentTransactions,
   getUserTransactions
 };

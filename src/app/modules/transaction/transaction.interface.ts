@@ -17,24 +17,21 @@ export enum TransactionStatus {
 
 export interface ITransaction {
   _id?: Types.ObjectId;
-  transactionId?: string;
+  transactionId: string; // Make this mandatory if it's generated
   transactionType: TransactionType;
 
   fromUser?: Types.ObjectId | null;
   toUser?: Types.ObjectId | null;
-  fromAgent?: Types.ObjectId | string | null;
-  toAgent?: Types.ObjectId | string | null;
+  fromAgent?: Types.ObjectId | null; // Optional if the transaction involves an agent
+  toAgent?: Types.ObjectId | null; // Optional if the transaction involves an agent
 
   amount: number;
   fee?: number;
   commission?: number;
 
-  initiatedBy?: Types.ObjectId;
-  initiatedByUser?: Types.ObjectId | null;
-  initiatedByAgent?: Types.ObjectId | null;
-
+  initiatedByUser: Types.ObjectId;  // Can be either a user or an agent who initiated
+  initiatedByAgent: Types.ObjectId;  // Can be either a user or an agent who initiated
   status: TransactionStatus;
   createdAt?: Date;
   updatedAt?: Date;
 }
-

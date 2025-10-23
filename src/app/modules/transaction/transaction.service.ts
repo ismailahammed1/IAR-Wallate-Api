@@ -59,20 +59,9 @@ const addMoneyByUser = async (
     if (!wallet)
       throw new AppError(StatusCodes.NOT_FOUND, "User wallet not found");
 
-    const agentWallet = await WalletModel.findOne({ user: agentId }).session(
-      session
-    );
-    if (!agentWallet)
-      throw new AppError(StatusCodes.NOT_FOUND, "Agent wallet not found");
-
     // ✅ Add money to user wallet
     wallet.balance += amount;
     await wallet.save({ session });
-
-    // ✅ Give agent commission (e.g., 1%)
-    const commission = amount * 0.01;
-    agentWallet.balance += commission;
-    await agentWallet.save({ session });
 
     const [transaction] = await TransactionModel.create(
       [
@@ -106,6 +95,7 @@ const addMoneyByUser = async (
     throw error;
   }
 };
+
 
 //  Withdraw from User to Agent
 const userWithdrawToAgent = async (
@@ -286,18 +276,15 @@ const sendMoneyByUser = async (
   }
 };
 
-//  Agent Cash In to User
-const agentCashInToUser = async (
+
+ const agentCashInToUser = async (
   agentId: string,
   userId: string,
   amount: number
 ) => {
   amount = Number(amount);
-  if (!agentId || !userId || !amount || amount <= 0) {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      "Agent ID, User ID, and valid amount are required"
-    );
+  if (!agentId || !userId || amount <= 0) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Invalid input");
   }
 
   const session = await mongoose.startSession();
@@ -306,34 +293,30 @@ const agentCashInToUser = async (
   try {
     const agent = await User.findById(agentId).session(session);
     const user = await User.findById(userId).session(session);
-
     if (!agent || agent.role !== Role.AGENT) {
       throw new AppError(StatusCodes.FORBIDDEN, "Invalid agent");
     }
-
     if (!user || user.role !== Role.USER) {
       throw new AppError(StatusCodes.FORBIDDEN, "Invalid user");
     }
 
-    const userWallet = await WalletModel.findOne({ user: userId }).session(
-      session
-    );
-    if (!userWallet)
-      throw new AppError(StatusCodes.NOT_FOUND, "User wallet not found");
+    const agentWallet = await WalletModel.findOne({ user: agentId }).session(session);
+    const userWallet = await WalletModel.findOne({ user: userId }).session(session);
 
-    userWallet.balance += amount;
-    await userWallet.save({ session });
-        //  agent wallet
-    const agentWallet = await WalletModel.findOne({ user: agentId }).session(
-      session
-    );
-    if (!agentWallet)
-      throw new AppError(StatusCodes.NOT_FOUND, "Agent wallet not found");
+    if (!agentWallet || !userWallet) {
+      throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
+    }
+    if (agentWallet.balance < amount) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Agent has insufficient balance");
+    }
 
     agentWallet.balance -= amount;
-    await agentWallet.save({ session });
+    userWallet.balance += amount;
 
-    const [transaction] = await TransactionModel.create(
+    await agentWallet.save({ session });
+    await userWallet.save({ session });
+
+    const transaction = await TransactionModel.create(
       [
         {
           transactionType: TransactionType.CASH_IN,
@@ -350,37 +333,32 @@ const agentCashInToUser = async (
     await session.commitTransaction();
     session.endSession();
 
-    const populatedTransaction = await TransactionModel.findById(
-      transaction._id
-    )
-      .populate("fromAgent", "name email role")
-      .populate("toUser", "name email role")
-      .populate("initiatedByAgent", "name email role");
+    const populatedTransaction = await TransactionModel.findById(transaction[0]._id)
+      .populate("fromAgent", "name email")
+      .populate("toUser", "name email")
+      .populate("initiatedByAgent", "name email");
 
     return {
-      message: "Cash-in successful",
+      message: "Cash‑in successful",
       newUserBalance: userWallet.balance,
+      newAgentBalance: agentWallet.balance,
       transaction: populatedTransaction,
     };
-  } catch (error) {
+  } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    throw error;
+    throw err;
   }
 };
 
-//  Agent Cash Out from User
-const agentCashOutFromUser = async (
+ const agentCashOutFromUser = async (
   agentId: string,
   userId: string,
   amount: number
 ) => {
   amount = Number(amount);
-  if (!agentId || !userId || !amount || amount <= 0) {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      "Agent ID, User ID, and valid amount are required"
-    );
+  if (!agentId || !userId || amount <= 0) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Invalid input");
   }
 
   const session = await mongoose.startSession();
@@ -389,43 +367,36 @@ const agentCashOutFromUser = async (
   try {
     const agent = await User.findById(agentId).session(session);
     const user = await User.findById(userId).session(session);
-
     if (!agent || agent.role !== Role.AGENT) {
       throw new AppError(StatusCodes.FORBIDDEN, "Invalid agent");
     }
-
     if (!user || user.role !== Role.USER) {
       throw new AppError(StatusCodes.FORBIDDEN, "Invalid user");
     }
 
-    const userWallet = await WalletModel.findOne({ user: userId }).session(
-      session
-    );
-    if (!userWallet)
-      throw new AppError(StatusCodes.NOT_FOUND, "User wallet not found");
-    if (userWallet.balance < amount)
-      throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient user balance");
+    const userWallet = await WalletModel.findOne({ user: userId }).session(session);
+    const agentWallet = await WalletModel.findOne({ user: agentId }).session(session);
+
+    if (!userWallet || !agentWallet) {
+      throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
+    }
+    if (userWallet.balance < amount) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "User has insufficient balance");
+    }
 
     userWallet.balance -= amount;
-    await userWallet.save({ session });
-
-    // Credit agent wallet
-    const agentWallet = await WalletModel.findOne({ user: agentId }).session(
-      session
-    );
-    if (!agentWallet)
-      throw new AppError(StatusCodes.NOT_FOUND, "Agent wallet not found");
-
     agentWallet.balance += amount;
+
+    await userWallet.save({ session });
     await agentWallet.save({ session });
 
-    const [transaction] = await TransactionModel.create(
+    const transaction = await TransactionModel.create(
       [
         {
           transactionType: TransactionType.CASH_OUT,
           amount,
           fromUser: userId,
-          toUser: agentId,
+          toAgent: agentId,
           initiatedByAgent: agentId,
           status: TransactionStatus.COMPLETED,
         },
@@ -436,49 +407,149 @@ const agentCashOutFromUser = async (
     await session.commitTransaction();
     session.endSession();
 
-    const populatedTransaction = await TransactionModel.findById(
-      transaction._id
-    )
-      .populate("fromUser", "name email role")
-      .populate("toUser", "name email role")
-      .populate("initiatedByAgent", "name email role");
+    const populatedTransaction = await TransactionModel.findById(transaction[0]._id)
+      .populate("fromUser", "name email")
+      .populate("toAgent", "name email")
+      .populate("initiatedByAgent", "name email");
 
     return {
-      message: "Cash-out successful",
+      message: "Cash‑out successful",
       newUserBalance: userWallet.balance,
+      newAgentBalance: agentWallet.balance,
       transaction: populatedTransaction,
     };
-  } catch (error) {
+  } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    throw error;
+    throw err;
   }
 };
 
-//  Get All User Transactions
-const getUserTransactions = async () => {
+
+//  GET USER TRANSACTIONS (Paginated + Filtered)
+const getUserTransactions = async (query: any) => {
+  const {
+    type,
+    startDate,
+    endDate,
+    page = 1,
+    limit = 10,
+  } = query;
+
+  const parsedPage = parseInt(page);
+  const parsedLimit = parseInt(limit);
+
+  // Fetch all users
   const users = await User.find({ role: Role.USER }, "_id");
-  const userIds = users.map((user) => user._id);
+  const userIds = users.map((u) => u._id);
 
-  const transactions = await TransactionModel.find({
-    initiatedByUser: { $in: userIds },
-  });
+  const filter: any = {
+    $or: [
+      { fromUser: { $in: userIds } },
+      { toUser: { $in: userIds } },
+      { initiatedByUser: { $in: userIds } },
+    ],
+  };
 
-  return transactions;
+  // Optional filters
+  if (type && type !== "ALL") {
+    filter.transactionType = type;
+  }
+
+  if (startDate && endDate) {
+    const from = new Date(startDate);
+    const to = new Date(endDate);
+    to.setHours(23, 59, 59, 999);
+    filter.createdAt = { $gte: from, $lte: to };
+  }
+
+  // Pagination metadata
+  const total = await TransactionModel.countDocuments(filter);
+
+  const transactions = await TransactionModel.find(filter)
+    .populate("fromUser", "name email")
+    .populate("toUser", "name email")
+    .populate("fromAgent", "name email")
+    .populate("toAgent", "name email")
+    .populate("initiatedByUser", "name email role")
+    .populate("initiatedByAgent", "name email role")
+    .sort({ createdAt: -1 })
+    .skip((parsedPage - 1) * parsedLimit)
+    .limit(parsedLimit);
+
+  return {
+    data: transactions,
+    total,
+    page: parsedPage,
+    limit: parsedLimit,
+  };
 };
 
-//  Get All Agent Transactions
-const getAgentTransactions = async () => {
+
+
+const getAgentTransactions = async (query: any) => {
+  const {
+    type,
+    startDate,
+    endDate,
+    page = 1,
+    limit = 10,
+  } = query;
+
+  const parsedPage = parseInt(page);
+  const parsedLimit = parseInt(limit);
+
+  // Fetch all agents
   const agents = await User.find({ role: Role.AGENT }, "_id");
-  const agentIds = agents.map((agent: { _id: any }) => agent._id);
+  const agentIds = agents.map((a) => a._id);
 
-  const transactions = await TransactionModel.find({
-    initiatedByAgent: { $in: agentIds },
-  });
+  // Create filter object
+  const filter: any = {
+    $or: [
+      { fromAgent: { $in: agentIds } },
+      { toAgent: { $in: agentIds } },
+      { initiatedByAgent: { $in: agentIds } },
+    ],
+  };
 
-  return transactions;
+  // Apply filter based on transaction type
+  if (type && type !== "ALL") {
+    filter.transactionType = type;
+  }
+
+  // Apply date range filter
+  if (startDate && endDate) {
+    const from = new Date(startDate);
+    const to = new Date(endDate);
+    to.setHours(23, 59, 59, 999);  // Ensure the end date includes the full day
+    filter.createdAt = { $gte: from, $lte: to };
+  }
+
+  // Total transactions count for pagination
+  const total = await TransactionModel.countDocuments(filter);
+
+  // Fetch paginated transactions with populated fields
+  const transactions = await TransactionModel.find(filter)
+    .populate("fromUser", "name email")
+    .populate("toUser", "name email")
+    .populate("fromAgent", "name email")
+    .populate("toAgent", "name email")
+    .populate("initiatedByUser", "name email role")
+    .populate("initiatedByAgent", "name email role")
+    .sort({ createdAt: -1 })
+    .skip((parsedPage - 1) * parsedLimit)
+    .limit(parsedLimit);
+
+  return {
+    data: transactions,
+    total,
+    page: parsedPage,
+    limit: parsedLimit,
+  };
 };
-// transaction.service.ts
+
+
+
 const getAllTransactions = async (query: any) => {
   const {
     role,
@@ -557,9 +628,9 @@ const getAllTransactions = async (query: any) => {
     const searchIds = users.map((u) => u._id);
 
     if (role === "USER") {
-      transactionFilter.initiatedByUser = { $in: searchIds };
+      transactionFilter.initiatedByUser = { $in: userIds };
     } else if (role === "AGENT") {
-      transactionFilter.initiatedByAgent = { $in: searchIds };
+      transactionFilter.initiatedByAgent = { $in: userIds };
     } else {
       transactionFilter.$or = [
         { initiatedByUser: { $in: searchIds } },
@@ -591,6 +662,103 @@ const getAllTransactions = async (query: any) => {
 
 
 
+const getUserOwnTransactions = async (query: any, userId: string) => {
+  const { type, startDate, endDate, page = 1, limit = 10 } = query;
+
+  const parsedPage = parseInt(page);
+  const parsedLimit = parseInt(limit);
+
+  const filter: any = {
+    $or: [
+      { fromUser: userId },
+      { toUser: userId },
+      { initiatedByUser: userId },
+    ],
+  };
+
+  if (type && type !== "ALL") {
+    filter.transactionType = type;
+  }
+
+  if (startDate && endDate) {
+    const from = new Date(startDate);
+    const to = new Date(endDate);
+    to.setHours(23, 59, 59, 999);
+    filter.createdAt = { $gte: from, $lte: to };
+  }
+
+  const total = await TransactionModel.countDocuments(filter);
+
+  const transactions = await TransactionModel.find(filter)
+    .populate("fromUser", "name email")
+    .populate("toUser", "name email")
+    .populate("fromAgent", "name email")
+    .populate("toAgent", "name email")
+    .populate("initiatedByUser", "name email role")
+    .populate("initiatedByAgent", "name email role")
+    .sort({ createdAt: -1 })
+    .skip((parsedPage - 1) * parsedLimit)
+    .limit(parsedLimit);
+
+  return {
+    data: transactions,
+    total,
+    page: parsedPage,
+    limit: parsedLimit,
+  };
+};
+
+
+const getAgentOwnTransactions = async (query: any, agentId: string) => {
+  const { type, startDate, endDate, page = 1, limit = 10 } = query;
+
+  const parsedPage = parseInt(page);
+  const parsedLimit = parseInt(limit);
+
+  const filter: any = {
+    $or: [
+      { fromAgent: agentId },
+      { toAgent: agentId },
+      { initiatedByAgent: agentId },
+      // Include transactions where the agent helped a user (e.g., add money or cash in)
+      { fromUser: agentId },
+      { toUser: agentId },
+    ],
+  };
+
+  if (type && type !== "ALL") {
+    filter.transactionType = type;
+  }
+
+  if (startDate && endDate) {
+    const from = new Date(startDate);
+    const to = new Date(endDate);
+    to.setHours(23, 59, 59, 999);
+    filter.createdAt = { $gte: from, $lte: to };
+  }
+
+  const total = await TransactionModel.countDocuments(filter);
+
+  const transactions = await TransactionModel.find(filter)
+    .populate("fromUser", "name email")
+    .populate("toUser", "name email")
+    .populate("fromAgent", "name email")
+    .populate("toAgent", "name email")
+    .populate("initiatedByUser", "name email role")
+    .populate("initiatedByAgent", "name email role")
+    .sort({ createdAt: -1 })
+    .skip((parsedPage - 1) * parsedLimit)
+    .limit(parsedLimit);
+
+  return {
+    data: transactions,
+    total,
+    page: parsedPage,
+    limit: parsedLimit,
+  };
+};
+
+
 //  Export Service
 export const transactionService = {
   addMoneyByUser,
@@ -598,6 +766,8 @@ export const transactionService = {
   sendMoneyByUser,
   agentCashInToUser,
   agentCashOutFromUser,
+getUserOwnTransactions,
+getAgentOwnTransactions,
   getUserTransactions,
   getAgentTransactions,
   getAllTransactions,

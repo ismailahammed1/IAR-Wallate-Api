@@ -54,7 +54,7 @@ export const checkAuth =
       req.user = verifiedToken;
       next();
     } catch (error) {
-      console.log("jwt error", error);
+    
       next(error);
     }
   };

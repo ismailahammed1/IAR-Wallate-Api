@@ -3,12 +3,12 @@
 import { AppError } from "../../errorHelpers/AppError";
 import { createNewAccessTokenWithRefreshToken } from "../../utils/userToken";
 
-import { Agent, User } from "../user/user.model";
+import { User } from "../user/user.model";
 import bcryptjs from 'bcryptjs'
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/envVars";
 import { StatusCodes } from "http-status-codes";
-import { isActive, Role, userStatus } from "../user/user.interface";
+import { isActive, Iuser, Role, userStatus } from "../user/user.interface";
 import { sendEmail } from "../../utils/sendEmail";
 
 
@@ -103,47 +103,34 @@ const setPassword = async (newPassword: string, decodedToken: JwtPayload) => {
 
 
 
-const forgotPassword = async (email: string, name: string) => {
+const forgotPassword = async (email: string ,name:string) => {
+  const user = await User.findOne({ email }) as (Iuser & Document) | null;
 
-    const isUserExist = await User.findOne({ email })
+  if (!user) throw new AppError(StatusCodes.BAD_REQUEST, "User does not exist");
+  if (!user.isVerified) throw new AppError(StatusCodes.BAD_REQUEST, "User is not verified");
 
-    if (!isUserExist) {
-        throw new AppError(StatusCodes.BAD_REQUEST, "User does not exist")
-    }
-    if (!isUserExist.isVerified) {
-        throw new AppError(StatusCodes.BAD_REQUEST, "User is not verified")
-    }
-    if (isUserExist.isActive === isActive.BLOCKED || isUserExist.isActive === isActive.INACTIVE) {
-        throw new AppError(StatusCodes.BAD_REQUEST, `User is ${isUserExist.isActive}`)
-    }
-    if (isUserExist.isDeleted) {
-        throw new AppError(StatusCodes.BAD_REQUEST, "User is deleted")
-    }
+  const resetToken = jwt.sign(
+    { userId: user._id, email: user.email, role: user.role },
+    envVars.jwt_secret,
+    { expiresIn: "10m" }
+  );
 
-    const jwtPayload = {
-        userId: isUserExist._id,
-        email: isUserExist.email,
-        role: isUserExist.role
-    }
+  const resetUILink = `${envVars.FRONT_END_URL}/reset-password?id=${user._id}&token=${resetToken}`;
 
-    const resetToken = jwt.sign(jwtPayload, envVars.jwt_secret, {
-        expiresIn: "10m"
-    })
+  const html = `
+    <h1>Password Reset Request</h1>
+    <p>Hello ${user.name},</p>
+    <p>Click the link below to reset your password:</p>
+    <a href="${resetUILink}">${resetUILink}</a>
+    <p>This link will expire in 10 minutes.</p>
+  `;
 
-    const resetUILink = `${envVars.FRONT_END_URL}/reset-password?id=${isUserExist._id}&token=${resetToken}`
-
-    sendEmail({
-        to: isUserExist.email,
-        subject: "Password Reset",
-        templateName: "forgetPassword",
-        templateData: {
-            name: isUserExist.name,
-            resetUILink
-        }
-    })
-
-  
-}
+  await sendEmail({
+    to: user.email,
+    subject: "Password Reset",
+    html,
+  });
+};
 
 const approveAgentAndUserRequest = async (userId: string, verifiedToken: JwtPayload) => {
 //  const verifiedROle=verifiedToken.role

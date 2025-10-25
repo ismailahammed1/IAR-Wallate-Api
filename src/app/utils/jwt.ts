@@ -14,8 +14,9 @@ export const verifyToken = (token: string, secret: string): JwtPayload => {
   try {
         const decoded = jwt.verify(token, secret) as JwtPayload;
     return decoded;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err: any) {
-    console.error("Token verification failed:", err.message);
+   
     throw new AppError(401, "Invalid or expired token");
   }
 };

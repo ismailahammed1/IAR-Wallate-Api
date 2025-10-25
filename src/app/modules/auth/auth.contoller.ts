@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Request, Response } from "express";
@@ -12,7 +13,6 @@ import { envVars } from "../../config/envVars";
 import { createUserTokens } from "../../utils/userToken";
 import passport from "passport";
 import { Iuser, Role } from "../user/user.interface";
-
 
 const credentialsLogin = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -42,7 +42,6 @@ const credentialsLogin = catchAsync(
   }
 );
 
-
 const getNewAccessToken = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const refreshToken = req.cookies.refreshToken;
@@ -61,37 +60,45 @@ const getNewAccessToken = catchAsync(
     });
   }
 );
+const logout = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+const isProduction = envVars.NODE_ENV === "production";
 
-const logout = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    path: "/", 
+  });
 
-    sendResponse(res, {
-      success: true,
-      statusCode: StatusCodes.OK,
-      message: "Logged out successfully",
-      data: null,
-    });
-  }
-);
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    path: "/",
+  });
+
+  
+  req.session?.destroy(() => {});
+
+  return res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
+});
+
+
 
 const changePassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { oldPassword, newPassword,confirmPassword } = req.body;
-    const decodedToken = req.user ;
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const decodedToken = req.user;
 
-   await authServices.changePassword(oldPassword, newPassword,confirmPassword, decodedToken as JwtPayload);
+    await authServices.changePassword(
+      oldPassword,
+      newPassword,
+      confirmPassword,
+      decodedToken as JwtPayload
+    );
 
     sendResponse(res, {
       success: true,
@@ -172,12 +179,6 @@ const approveAgentAndUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const loginUser = req.user as JwtPayload;
     const userId = loginUser.userId;
-
-    // const role = loginUser.role;
-
-    // console.log("Logged in admin ID:", userId);
-    // console.log("Target user to promote:", req.params.id);
-    // console.log("role",role,loginUser );
 
     if (!userId) {
       return next(

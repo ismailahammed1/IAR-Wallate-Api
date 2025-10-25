@@ -28,12 +28,17 @@ const sendOTP = async (email: string, name: string) => {
   const redisKey = `otp:${email}`;
 
   await redisClient.set(redisKey, otp, { EX: OTP_EXPIRATION });
+const html = `
+      <h1>Your OTP Code</h1>
+      <p>Hello ${name},</p>
+      <p>Your OTP code is: <strong>${otp}</strong></p>
+      <p>This code will expire in 2 minutes.</p>
+    `;
 
   await sendEmail({
     to: email,
     subject: "Your OTP Code",
-    templateName: "otp",
-    templateData: { name, otp },
+    html,
   });
 
 };

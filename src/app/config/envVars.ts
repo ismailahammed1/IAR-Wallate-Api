@@ -5,7 +5,7 @@ dotenv.config();
 interface EnvConfig {
   PORT: string;
   MONGO_URL: string;
-  NODE_ENV: "Development" | "Production";
+  NODE_ENV: "development" | "production";
   jwt_secret: string;
   jwt_Expired: string;
   JWT_REFRESH_SECRETS: string;
@@ -68,7 +68,7 @@ const loadEnvVariables = (): EnvConfig => {
   return {
     PORT: process.env.PORT as string,
     MONGO_URL: process.env.MONGO_URL as string,
-    NODE_ENV: process.env.NODE_ENV as "Development" | "Production",
+    NODE_ENV: process.env.NODE_ENV as "development" | "production",
     jwt_secret: process.env.jwt_secret as string,
     jwt_Expired: process.env.jwt_Expired as string,
     JWT_REFRESH_SECRETS: process.env.JWT_REFRESH_SECRETS as string,

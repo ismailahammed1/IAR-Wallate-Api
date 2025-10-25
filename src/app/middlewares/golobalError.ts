@@ -17,7 +17,7 @@ const globalErrorHandler = (
   next: NextFunction
 ) => {
 
-    if (envVars.NODE_ENV === "Development") {
+    if (envVars.NODE_ENV === "development") {
         console.log(err);
     }
   
@@ -62,8 +62,8 @@ const globalErrorHandler = (
   res.status(statusCode).json({
         success: false,
         message,
-        err: envVars.NODE_ENV === "Development" ? err : null,
-        stack: envVars.NODE_ENV === "Development" ? err.stack : null
+        err: envVars.NODE_ENV === "development" ? err : null,
+        stack: envVars.NODE_ENV === "development" ? err.stack : null
   });
 };
 

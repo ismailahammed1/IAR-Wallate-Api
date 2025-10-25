@@ -284,7 +284,37 @@ https://www.loom.com/share/3e48991de42846f78b8b45b8c3fc8846
 }}}}
 
 ```
+### ⚙️ Backend Repository
+- **Repository Name:** `iar-wallet-backend`
+- **Tech Stack:** Node.js + Express.js + MongoDB + JWT + Mongoose
+- **Features:**
+  - RESTful API for users, wallets, and transactions
+  - Role-based authentication and authorization
+  - Transaction processing logic for cash in/out, send, add, withdraw
+  - Admin and agent management endpoints
+- **Link:** [👉 View Backend Repository](https://github.com/your-username/iar-wallet-backend)
 
+
+
+
+### Backend Commit Highlights
+| Commit Message | Description |
+|----------------|-------------|
+| `branch: Development` | main Branch |
+| `branch: Project-setup` | Base backend setup |
+| `branch: userpart` | create user login reagister|
+| `branch: wallet` | find wallter, my wallet |
+| `branch: transaction` | Added send/add/withdraw/cash-in/cash-out APIs |
+| `branch: transaction` | Added send/add/withdraw/cash-in/cash-out APIs |
+
+
+
+## Live link
+backend:
+fontend:
+## github link
+backend:
+fontend:
 
 
 

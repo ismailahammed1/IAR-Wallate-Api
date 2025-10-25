@@ -103,7 +103,7 @@ const getSingleUser = catchAsync(
 
 const newUpdatedUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.user?.userId;
+    const userId = (req.user as JwtPayload & { userId: string }).userId;
     const verifiedToken = req.user;
     const payload = req.body;
 

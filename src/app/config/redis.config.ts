@@ -17,11 +17,15 @@ redisClient.on('error', err => console.log('Redis Client Error', err));
 // const result = await client.get('foo');
 // console.log(result)  // >>> bar
 
-export const connectRedish=async()=>{
+export const connectRedish = async () => {
+  try {
     if (!redisClient.isOpen) {
-        await redisClient.connect()
-        console.log("redis connect");
-        
+      await redisClient.connect();
+      console.log('Redis connected');
     }
-}
+  } catch (err) {
+    console.error('Redis connection failed:', err);
+    process.exit(1); // Stop server if Redis can't connect
+  }
+};
 
